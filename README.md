@@ -13,9 +13,10 @@ alpha: build instructions are below. Version 17 received positive headset
 feedback; version 18 adds locally tested gun rendering and cutscene reload fixes
 and still needs physical feedback. See [changes and known issues](CHANGELOG.md).
 
-The development candidate on this branch is **probe 19**, adding adjustable
-vibration and cancellation requests on focus/tracking loss. It still needs a
-physical headset test; the tagged alpha 18 source remains available separately.
+The development candidate on this branch is **probe 20**, correcting excessive
+parallax on the observed native near-screen shot flame/glow. It retains probe 19's
+adjustable vibration and cancellation requests on focus/tracking loss. Physical
+testing remains pending; the tagged alpha 18 source is available separately.
 
 ## Features
 

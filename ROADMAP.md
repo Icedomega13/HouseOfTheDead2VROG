@@ -7,7 +7,7 @@ tools or routine troubleshooting. Work proceeds through these release gates:
 
 | Area | Acceptance target | Current status |
 |---|---|---|
-| Aiming and effects | Gun, native shots and impact graphics agree throughout encounters | Hit-sprite placement remains under investigation; bounded traces are being improved |
+| Aiming and effects | Gun, native shots and impact graphics agree throughout encounters | Probe 20 corrects near-screen shot-flash depth; physical placement and other effect coverage remain pending |
 | Rendering | Solid gun, clean dialogue/transitions and predictable wide turns | Gun depth fix locally checked; residual bars and unseen geometry need broader coverage |
 | Controls | Recenter, menus and both reload methods work reliably; resting the gun does not accidentally skip cinematics | Existing controls work in reported tests; cinematic gesture guard needs broader physical coverage |
 | Haptics and gun feel | Tunable shot/reload feedback, optional damage/dry-fire patterns, restrained recoil/flash | Probe 19 adds strength and cancellation; confirmed gameplay-event detection and physical feel are pending |

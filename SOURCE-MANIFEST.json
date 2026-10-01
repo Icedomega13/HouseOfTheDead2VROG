@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "release": "development-probe-19",
-  "probe_version": 19,
+  "release": "development-probe-20",
+  "probe_version": 20,
   "files": [
     {
       "path": "README.md",
-      "sha256": "d242505ec4d26276dd876f45475f9c3514cf7a150322f145ca75415d32d3bc3b"
+      "sha256": "7341055531e82062893134442ff79faf0d347e37804511de533975300973dc18"
     },
     {
       "path": "LICENSE",
@@ -25,7 +25,7 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "54c1bde39aeb9994b17816a6522af8fcff6398ddaddf06370734a02bfe521c99"
+      "sha256": "1623ead7e2fbdbf37cc939ad04632ad84d19674acd5af13ef33e07fc273536bc"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -33,7 +33,7 @@
     },
     {
       "path": "ROADMAP.md",
-      "sha256": "0834f27105d21e45bee071ea9703c4df80372a9e7578953abdbf8a962e8c0bf2"
+      "sha256": "2a4a905b8c39079858190d9130f573871023d3cd63e5cc3b707f1c9b020479ea"
     },
     {
       "path": ".github/workflows/build.yml",
@@ -49,7 +49,7 @@
     },
     {
       "path": "pcvr/native/ddraw_probe.cpp",
-      "sha256": "e9a5716fcab8ce97a4583934c449f7f532388c60ec98656ecda705e0f63f7f69"
+      "sha256": "360585fa61d17b8710cbeabc5e6199e5f559b2fffeaa58b0bf2212f2b6f52885"
     },
     {
       "path": "pcvr/native/ddraw_probe.def",
@@ -109,7 +109,7 @@
     },
     {
       "path": "pcvr/native/stereo_preview.inl",
-      "sha256": "7316fff133fc6b3d0c8e6b59e6f4abdd3b84cd5e34be6c7106fa8c74135288c4"
+      "sha256": "959cc8cef8512530bfb578bf9bb6b83921d7b627187e7fe913b865f4f51173ef"
     },
     {
       "path": "pcvr/native/texture_image_tests.cpp",
@@ -133,7 +133,7 @@
     },
     {
       "path": "pcvr/native/xr_bridge_tests.cpp",
-      "sha256": "9bcd3beaa71574290637a7d83281c869614019e1cf10305bf2ec2a55a05e90ca"
+      "sha256": "128533ef51c050519114a8a2d507a64aea536b3cd445a9391a24600f2f2be6be"
     },
     {
       "path": "pcvr/native/xr_bridge.cpp",
@@ -145,11 +145,11 @@
     },
     {
       "path": "pcvr/native/xr_math_tests.cpp",
-      "sha256": "30a5b29881ef68b78a941f3ba5bd7d90452a3892e0103f005248b976945bece4"
+      "sha256": "f804047ab99e55acde7e389648409c5d72e5139e308b3effd5d3e80f2152abb5"
     },
     {
       "path": "pcvr/native/xr_math.h",
-      "sha256": "7331370e8e93b2afc5d997049d7a1a0b425636a5d0fd8a405e4c3bfa1f458b80"
+      "sha256": "8fc7da90bb5406ce98bb960fdbf1babd6beb531774a4529d1683c0eca6528764"
     },
     {
       "path": "pcvr/native/xr_pixels_tests.cpp",

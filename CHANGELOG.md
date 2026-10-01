@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased — probe version 19 candidate
+## Unreleased — probe version 20 candidate
+
+- Recognize the observed rotated native near-screen shot flame/glow quads and
+  give them the existing two-metre HUD-distance eye pass. Previously they stayed
+  around one game unit (10 cm), amplifying head movement and eye separation.
+- Preserve native desktop drawing and ordinary world-particle depth. Captured
+  transform fixtures and moving-head bridge checks cover the regression.
+- Physical testing of the shot-flash correction is pending.
+
+### Version 19 changes retained
 
 - Adjustable `HapticStrength` from 0 to 200 percent; 100 preserves prior feel.
 - Request cancellation of submitted vibration on tracking/focus/input loss,
@@ -8,7 +17,7 @@
 - Handle positive not-focused statuses without claiming a pulse was delivered.
 - Reload pattern takes priority when trigger and reload have simultaneous edges.
 - Bound impact traces with cached content keys, UVs and tint; replay traces
-  distinguish cached same-size textures. No hit-sprite placement change yet.
+  distinguish cached same-size textures.
 - 734 local regression checks and a separate 60-second native replay passed.
 
 Physical feedback is pending. Haptics acknowledge input, not native ammo, hit or

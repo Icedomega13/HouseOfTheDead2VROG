@@ -126,6 +126,27 @@ int main() {
         camera=XMVector3TransformCoord(XMVectorSet(0,0,-1,1),XMLoadFloat4x4(&vm));
         close(XMVectorGetZ(camera),1,"ordinary geometry with a tiny near plane retains its world scale");
     }
+    // Native near-screen shot origin from the capture. Check the corrected
+    // depth against the existing cursor plane while moving and turning the head.
+    auto saved_left=bridge.views[0].pose,saved_right=bridge.views[1].pose;
+    for(unsigned step=0;step<3;++step) {
+        for(unsigned eye=0;eye<2;++eye) {
+            auto& pose=bridge.views[eye].pose;
+            pose.position={.15f*step+(eye==0?-.032f:.032f),.08f*step,-.04f*step};
+            pose.orientation={0,std::sin(.08f*step),0,std::cos(.08f*step)};
+            float x=0,y=0;require(xr_hud_vertex(eye,(1+.1343314f*gp._11)*320,(1-.07809962f*gp._22)*240,source,gp,x,y),"shot origin HUD available after head motion");
+            xr_eye_matrices(eye,gv,gp,v,p,true);XMFLOAT4X4 vm,pm;memcpy(&vm,&v,sizeof(vm));memcpy(&pm,&p,sizeof(pm));
+            auto projected=XMVector3TransformCoord(XMVectorSet(.1343314f,.07809962f,-1,1),XMLoadFloat4x4(&vm)*XMLoadFloat4x4(&pm));
+            close((XMVectorGetX(projected)+1)/2,x,"shot flash horizontal origin stays with cursor after head motion");
+            close((1-XMVectorGetY(projected))/2,y,"shot flash vertical origin stays with cursor after head motion");
+            if(step==1) {
+                xr_eye_matrices(eye,gv,gp,v,p,false);memcpy(&vm,&v,sizeof(vm));memcpy(&pm,&p,sizeof(pm));
+                projected=XMVector3TransformCoord(XMVectorSet(.1343314f,.07809962f,-1,1),XMLoadFloat4x4(&vm)*XMLoadFloat4x4(&pm));
+                require(std::fabs((XMVectorGetX(projected)+1)/2-x)>.1f,"old near-depth path reproduces large flash displacement");
+            }
+        }
+    }
+    bridge.views[0].pose=saved_left;bridge.views[1].pose=saved_right;
     // Lowering the barrel also lowers the aiming ray; the controller pivot stays fixed.
     configure_xr(true,10,800,nullptr,15);
     auto calibrated=calibrated_aim(1);XMFLOAT3 direction;

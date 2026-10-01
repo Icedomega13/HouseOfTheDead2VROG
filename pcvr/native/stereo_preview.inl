@@ -136,6 +136,9 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
         }
     }
     bool flat_xyz=false,letterbox=false;
+#ifdef HOTD2_CONTROLLER_REPLAY_TEST
+    unsigned shot_capture=0;
+#endif
     // Native cinematic bars are four-vertex, camera-aligned quads at Z=1,
     // using the ordinary scene projection rather than a special near plane.
     if(fvf==0x112&&count==4&&projection._34>0&&projection._43<0) {
@@ -143,7 +146,16 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
         D3DMATRIX world={};
         if(SUCCEEDED(device->GetTransform(D3DTRANSFORMSTATE_WORLD,&world))) {
             XMFLOAT4X4 w,v;memcpy(&w,&world,sizeof(w));memcpy(&v,&view,sizeof(v));
-            flat_xyz=hotd2_xr::unit_depth_plane(XMLoadFloat4x4(&w)*XMLoadFloat4x4(&v),vertices,count);
+            bool near_effect=hotd2_xr::near_screen_effect(XMLoadFloat4x4(&w),XMLoadFloat4x4(&v),vertices,count);
+            flat_xyz=near_effect||hotd2_xr::unit_depth_plane(XMLoadFloat4x4(&w)*XMLoadFloat4x4(&v),vertices,count);
+            if(near_effect) {
+                static unsigned reports=0;
+                if(reports++<4) log_line("VR_SCREEN_EFFECT rotated native shot quad recognized for HUD-distance eye pass; desktop preserved");
+#ifdef HOTD2_CONTROLLER_REPLAY_TEST
+                static unsigned captures=0;
+                if(overlay_audit&&captures<3) shot_capture=++captures;
+#endif
+            }
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
             if(flat_xyz&&overlay_audit) {
                 float bounds[]={1,-1,1,-1};
@@ -172,7 +184,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
             if(letterbox) cinematic_seen=true;
             letterbox=letterbox&&suppress_letterbox;
             static unsigned reports=0;
-            if(flat_xyz&&reports++<3) log_line("SCREEN_PLANE XYZ overlay at native Z=1 moved to 2 metres");
+            if(flat_xyz&&!near_effect&&reports++<3) log_line("SCREEN_PLANE XYZ overlay at native Z=1 moved to 2 metres");
         }
     }
     if(fvf==0x112&&(scene_count==1500||scene_count==3000)) {
@@ -263,5 +275,14 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
     if(desktop) {restored_target=device->SetRenderTarget(desktop,0);desktop->Release();}
     HRESULT restored_viewport=device->SetViewport(&viewport);
     if(FAILED(restored_view)||FAILED(restored_projection)||FAILED(restored_viewport)||FAILED(restored_target)) log_line("STEREO restore error view=%08lx projection=%08lx viewport=%08lx target=%08lx",restored_view,restored_projection,restored_viewport,restored_target);
+#ifdef HOTD2_CONTROLLER_REPLAY_TEST
+    if(shot_capture&&atlas) {
+        // At most three pairs, from owned targets only. Include the shot draw
+        // immediately; an arbitrary end-of-scene capture can miss a short flash.
+        capture_frame(device,220000+shot_capture*10+1);
+        SavedGameState saved(device,false,log_line,"shot_capture");
+        if(saved.bind(eye_atlas)) capture_frame(device,220000+shot_capture*10+2);
+    }
+#endif
     return result;
 }
