@@ -3,7 +3,7 @@ param([ValidateRange(15,90)][int]$Seconds=35,[string]$BuildDirectory,[string]$Ga
     [ValidateRange(0,16)][int]$AnisotropicFiltering=0,[bool]$SuppressLetterbox=$true,
     [ValidateRange(-180,180)][int]$YawDegrees=0,[switch]$Passive,[bool]$HeadsetVisibility=$true,
     [switch]$TimingAudit,[ValidateSet(0,60,90,120)][int]$NativeHz=0,
-    [switch]$TextureDump,[switch]$TexturePack,[switch]$NoVSync,[switch]$OverlayAudit,[switch]$Combat,[switch]$EffectAudit)
+    [switch]$TextureDump,[switch]$TexturePack,[switch]$NoVSync,[switch]$OverlayAudit,[switch]$Combat,[switch]$EffectAudit,[bool]$HideUnusedPlayerTwo=$true)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $game=Join-Path $root 'working/pcvr/game'
@@ -23,6 +23,7 @@ $evidence=Join-Path $root 'working/pcvr/captures/controller-replay'
 $profile=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'vr-settings.json') -Raw | ConvertFrom-Json
 if(!$PSBoundParameters.ContainsKey('EyeSize')){$EyeSize=$profile.EyeSize}
 $profile.EyeSize=$EyeSize
+$profile | Add-Member -NotePropertyName HideUnusedPlayerTwo -NotePropertyValue $HideUnusedPlayerTwo -Force
 $profile | Add-Member -NotePropertyName Antialiasing -NotePropertyValue $Antialiasing -Force
 $profile | Add-Member -NotePropertyName AnisotropicFiltering -NotePropertyValue $AnisotropicFiltering -Force
 $profile | Add-Member -NotePropertyName HeadsetVisibility -NotePropertyValue $HeadsetVisibility -Force
@@ -32,7 +33,7 @@ try {
  Copy-Item -LiteralPath $replay -Destination (Join-Path $game 'ddraw.dll') -Force
  (Get-Item -LiteralPath (Join-Path $game 'ddraw.dll')).IsReadOnly=$false
  Set-Hotd2GraphicsQuality -ConfigPath (Join-Path $game 'dgVoodoo.conf') -Antialiasing $Antialiasing -AnisotropicFiltering $AnisotropicFiltering
- @('[Stereo]','Enabled=1','SeparationMilliunits=6400','[OpenXR]','Enabled=1',"UnitsPerMetre=$($profile.UnitsPerMetre)","EyeSize=$($profile.EyeSize)","GunPitchMilliDegrees=$([int]($profile.GunPitchDegrees*1000))","Haptics=$([int][bool]$profile.Haptics)","HapticStrength=$($profile.HapticStrength)","AimDownReload=$([int][bool]$profile.AimDownReload)","DownReloadDegrees=$($profile.DownReloadDegrees)","SuppressLetterbox=$([int]$SuppressLetterbox)","HeadsetVisibility=$([int]$HeadsetVisibility)") | Set-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
+ @('[Stereo]','Enabled=1','SeparationMilliunits=6400','[OpenXR]','Enabled=1',"UnitsPerMetre=$($profile.UnitsPerMetre)","EyeSize=$($profile.EyeSize)","GunPitchMilliDegrees=$([int]($profile.GunPitchDegrees*1000))","Haptics=$([int][bool]$profile.Haptics)","HapticStrength=$($profile.HapticStrength)","AimDownReload=$([int][bool]$profile.AimDownReload)","DownReloadDegrees=$($profile.DownReloadDegrees)","SuppressLetterbox=$([int]$SuppressLetterbox)","HeadsetVisibility=$([int]$HeadsetVisibility)","HideUnusedPlayerTwo=$([int]$HideUnusedPlayerTwo)") | Set-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayYawDegrees=$YawDegrees","ReplayPassive=$([int][bool]$Passive)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayOverlayAudit=$([int][bool]$OverlayAudit)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayCombat=$([int][bool]$Combat)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii

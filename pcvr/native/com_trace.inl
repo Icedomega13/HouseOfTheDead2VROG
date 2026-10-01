@@ -7,6 +7,7 @@ static IDirect3DDevice7* last_rendering_device=nullptr; // Borrowed, used only a
 #include "input_bridge.inl"
 #include "timing_research.inl"
 #include "texture_pack.inl"
+#include "hud_prompt.inl"
 static void update_cinematic_guard();
 static volatile LONG presentation_count=0;
 static HRESULT WINAPI trace_flip(void* object,LPDIRECTDRAWSURFACE7 target,DWORD flags) {

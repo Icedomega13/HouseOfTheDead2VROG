@@ -12,7 +12,7 @@ function Invoke-Check([string]$Name,[string[]]$Arguments=@()) {
 }
 Push-Location -LiteralPath $BuildDirectory
 try {
-    foreach($name in @('xr_math_tests','xr_bridge_tests','reload_gesture_tests','xr_pixels_tests','render_state_tests','pistol_mesh_tests')) {Invoke-Check $name}
+    foreach($name in @('xr_math_tests','xr_bridge_tests','reload_gesture_tests','xr_pixels_tests','render_state_tests','pistol_mesh_tests','hud_prompt_tests')) {Invoke-Check $name}
     # Unique scratch file; never overwrite a user's texture artwork.
     $png=Join-Path $BuildDirectory ('texture-check-'+[guid]::NewGuid().ToString('N')+'.png')
     try {Invoke-Check 'texture_image_tests' @($png)} finally {if(Test-Path -LiteralPath $png){Remove-Item -LiteralPath $png}}

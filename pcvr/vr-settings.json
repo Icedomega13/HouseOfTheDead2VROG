@@ -9,5 +9,6 @@
   "Antialiasing": 4,
   "AnisotropicFiltering": 8,
   "SuppressLetterbox": true,
-  "HeadsetVisibility": true
+  "HeadsetVisibility": true,
+  "HideUnusedPlayerTwo": true
 }

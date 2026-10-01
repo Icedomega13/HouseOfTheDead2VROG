@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased — probe version 20 candidate
+## Unreleased — probe version 21 candidate
+
+- Hide the observed English player-two join invitation, credit label and count
+  from the headset. Match exact bitmap content and footer geometry; retain
+  original desktop drawing and ammo placement.
+- Optional `HideUnusedPlayerTwo` boolean defaults to true; false restores the
+  native footer. Bounded source caching avoids repeated texture readbacks.
+- Handle credit counts drawn before or after their label, with a row association
+  expiring after one following presentation. The first unassociated count can
+  remain for one frame.
+- Physical HUD verification and broader menu/campaign coverage remain pending.
+
+### Version 20 changes retained
 
 - Recognize the observed rotated native near-screen shot flame/glow quads and
   give them the existing two-metre HUD-distance eye pass. Previously they stayed

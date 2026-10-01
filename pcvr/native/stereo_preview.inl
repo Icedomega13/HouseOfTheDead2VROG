@@ -37,6 +37,8 @@ static void configure_stereo() {
     suppress_letterbox=GetPrivateProfileIntW(L"OpenXR",L"SuppressLetterbox",1,path)!=0;
     headset_visibility=GetPrivateProfileIntW(L"OpenXR",L"HeadsetVisibility",1,path)!=0;
     effect_audit=GetPrivateProfileIntW(L"OpenXR",L"EffectAudit",0,path)!=0;
+    hide_unused_player_two=GetPrivateProfileIntW(L"OpenXR",L"HideUnusedPlayerTwo",1,path)!=0;
+    log_line("VR_HUD hide_unused_player_two=%d ammo_placement_unchanged=1",hide_unused_player_two);
     int pitch_milli=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"GunPitchMilliDegrees",15000,path));
     float gun_pitch=static_cast<float>(std::clamp(pitch_milli,-45000,45000))/1000;
     bool haptics=GetPrivateProfileIntW(L"OpenXR",L"Haptics",1,path)!=0;
@@ -215,6 +217,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
     if(atlas) {
         // Preserve the original desktop image for game input and diagnostics.
         result=draw(vertices);
+        if(xr_frame_ready()&&hide_player_two_draw(device,fvf,vertices,count,viewport,static_cast<uint32_t>(presentation_count))) return result;
         if(letterbox) {
             static unsigned reports=0;if(reports++<4) log_line("VR_LETTERBOX native bar preserved on desktop, suppressed in eye atlas");
             return result;

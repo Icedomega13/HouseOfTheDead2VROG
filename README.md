@@ -13,8 +13,9 @@ alpha: build instructions are below. Version 17 received positive headset
 feedback; version 18 adds locally tested gun rendering and cutscene reload fixes
 and still needs physical feedback. See [changes and known issues](CHANGELOG.md).
 
-The development candidate on this branch is **probe 20**, correcting excessive
-parallax on the observed native near-screen shot flame/glow. It retains probe 19's
+The development candidate on this branch is **probe 21**, hiding the observed
+unused player-two join/credit footer in the headset while keeping ammo in place.
+It retains probe 20's near-screen shot-flash correction and probe 19's
 adjustable vibration and cancellation requests on focus/tracking loss. Physical
 testing remains pending; the tagged alpha 18 source is available separately.
 
@@ -124,6 +125,12 @@ Positive gun pitch lowers the barrel and shooting ray. If performance suffers,
 try an eye size of 1000 or 800 and lower AA. `AimDownReload`, `Haptics`,
 `SuppressLetterbox` and `HeadsetVisibility` are switches. Explicit parameters to
 `run-probe.ps1` override the profile. This does not enable a frame-rate unlock.
+
+Probe 21 adds `HideUnusedPlayerTwo` (boolean, default true) for the English
+player-two join/credit footer. Set it to false to restore that headset display.
+Title/start and other messages retain their native paths; ammo is unchanged.
+Unrecognized/modified prompt graphics remain visible. Broader campaign and
+physical headset coverage remain pending.
 
 In the probe 19 candidate, `HapticStrength` is an integer percentage from 0 to
 200: 100 preserves the existing pulse feel, 50 halves amplitude, 200 doubles it

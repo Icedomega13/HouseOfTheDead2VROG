@@ -41,6 +41,8 @@ cl /nologo /O2 /W4 /WX /EHsc /std:c++17 /MT "%PROJECT_ROOT%\pcvr\native\texture_
 if errorlevel 1 goto fail
 cl /nologo /O2 /W4 /WX /EHsc /std:c++17 /MT "%PROJECT_ROOT%\pcvr\native\pistol_mesh_tests.cpp" /Fe:pistol_mesh_tests.exe
 if errorlevel 1 goto fail
+cl /nologo /O2 /W4 /WX /EHsc /std:c++17 /MT "%PROJECT_ROOT%\pcvr\native\hud_prompt_tests.cpp" /Fe:hud_prompt_tests.exe
+if errorlevel 1 goto fail
 cl /nologo /O2 /W4 /WX /EHsc /std:c++17 /MT "%PROJECT_ROOT%\pcvr\native\gun_render_tests.cpp" /Fe:gun_render_tests.exe /link dxguid.lib user32.lib
 if errorlevel 1 goto fail
   copy /y "%XR_SDK%\Win32\bin\openxr_loader.dll" . >nul
