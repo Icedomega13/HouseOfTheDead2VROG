@@ -25,6 +25,8 @@ struct Bridge {
     unsigned eye_size=800;
     bool focused=false,recenter_request=false,aim_valid=false;
     bool trigger_down=false,feedback_fire=false,feedback_reload=false,haptics=true,haptics_failed=false;
+    bool haptic_pulse_pending=false;
+    float haptic_scale=1;
     bool aim_down_reload=true;
     bool cinematic_guard=false;
     float reload_down_y=-0.819152f,reload_rearm_y=-0.573576f;
@@ -54,7 +56,21 @@ struct Bridge {
     unsigned transfer_count=0;
     double transfer_total_ms=0,transfer_max_ms=0;
 } bridge;
+void stop_controller_feedback() {
+    if(!bridge.haptic_pulse_pending) return;
+    bridge.haptic_pulse_pending=false;
+    if(!bridge.session||!bridge.vibration) return;
+    XrHapticActionInfo info={XR_TYPE_HAPTIC_ACTION_INFO};info.action=bridge.vibration;
+    auto result=xrStopHapticFeedback(bridge.session,&info);
+    // SESSION_NOT_FOCUSED is an expected positive status during focus changes.
+    // Consume the latch once; do not spam the runtime on subsequent empty frames.
+    if(XR_FAILED(result)) {
+        bridge.haptics_failed=true;
+        if(bridge.log) bridge.log("XR haptics stop failed result=%d; vibration disabled, input remains available",result);
+    }
+}
 void clear_controls() {
+    stop_controller_feedback();
     bridge.input={};bridge.aim_valid=false;bridge.trigger_down=false;
     bridge.feedback_fire=bridge.feedback_reload=false;bridge.reload_gesture.reset();
 }
@@ -161,17 +177,19 @@ void sync_input() {
     if(!bridge.aim_valid) {bridge.input.fire=false;bridge.trigger_down=false;}
 }
 void controller_feedback() {
-    bool active=bridge.input.active&&bridge.valid_pose&&bridge.aim_valid&&bridge.recentered;
+    bool active=bridge.focused&&bridge.input.active&&bridge.valid_pose&&bridge.aim_valid&&bridge.recentered;
     bool fire=active&&bridge.input.fire,reload=active&&bridge.input.reload;
     bool fire_edge=fire&&!bridge.feedback_fire,reload_edge=reload&&!bridge.feedback_reload;
     bridge.feedback_fire=fire;bridge.feedback_reload=reload;
-    if(!bridge.haptics||bridge.haptics_failed||!bridge.focused||!bridge.session||!bridge.vibration||(!fire_edge&&!reload_edge)) return;
+    if(!active||!bridge.haptics||bridge.haptic_scale==0||bridge.haptics_failed) {stop_controller_feedback();return;}
+    if(!bridge.session||!bridge.vibration||(!fire_edge&&!reload_edge)) return;
     XrHapticActionInfo info={XR_TYPE_HAPTIC_ACTION_INFO};info.action=bridge.vibration;
     XrHapticVibration pulse={XR_TYPE_HAPTIC_VIBRATION};
     pulse.frequency=XR_FREQUENCY_UNSPECIFIED;
-    pulse.duration=fire_edge?35000000:65000000; // nanoseconds; controller input acknowledgement only.
-    pulse.amplitude=fire_edge?0.3f:0.15f;
+    pulse.duration=reload_edge?65000000:35000000; // nanoseconds; input acknowledgement only.
+    pulse.amplitude=(reload_edge?0.15f:0.3f)*bridge.haptic_scale;
     auto result=xrApplyHapticFeedback(bridge.session,&info,reinterpret_cast<const XrHapticBaseHeader*>(&pulse));
+    if(result==XR_SUCCESS) bridge.haptic_pulse_pending=true;
     if(XR_FAILED(result)) {
         bridge.haptics_failed=true;
         if(bridge.log) bridge.log("XR haptics disabled result=%d; input remains available",result);
@@ -334,10 +352,13 @@ bool upload_eyes(IDirect3DDevice7* device,IDirectDrawSurface7* atlas) {
 }
 }
 
-void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees,bool haptics,bool aim_down_reload,float down_reload_degrees) {
+void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees,bool haptics,bool aim_down_reload,float down_reload_degrees,float haptic_scale) {
     bridge.enabled=enabled;bridge.units=units_per_metre;bridge.eye_size=eye_size;bridge.log=log;
     bridge.gun_pitch=std::clamp(gun_pitch_degrees,-45.0f,45.0f)*DirectX::XM_PI/180;
     bridge.haptics=haptics;
+    bridge.haptic_scale=std::isfinite(haptic_scale)?std::clamp(haptic_scale,0.0f,2.0f):1.0f;
+    if(!enabled||!haptics||bridge.haptic_scale==0) stop_controller_feedback();
+    if(log) log("XR haptics configured enabled=%d strength_percent=%.0f input_acknowledgement_only=1",haptics,bridge.haptic_scale*100);
     bridge.aim_down_reload=aim_down_reload;
     float degrees=std::clamp(down_reload_degrees,35.0f,85.0f);
     bridge.reload_down_y=-std::sin(degrees*DirectX::XM_PI/180);

@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "release": "v0.1.0-alpha.18",
-  "probe_version": 18,
+  "release": "development-probe-19",
+  "probe_version": 19,
   "files": [
     {
       "path": "README.md",
-      "sha256": "1b4c0ef7e74daba409d838f9f3918bfdae5c1891dc064d27fba9c4d9669b4ac2"
+      "sha256": "d242505ec4d26276dd876f45475f9c3514cf7a150322f145ca75415d32d3bc3b"
     },
     {
       "path": "LICENSE",
@@ -16,16 +16,24 @@
       "sha256": "b2915d832c8bd42407a64fb18c0d578c106b7310f3dfe0a092c19b396332ed32"
     },
     {
+      "path": ".gitattributes",
+      "sha256": "4a3de6ec248ab0f626ae70b9e8f9ad7b4ce0df8f0e07b8c4a760b8714a9a264a"
+    },
+    {
       "path": "THIRD_PARTY.md",
       "sha256": "cb6e25b0c8c3283e1f2de2c746ec440da4ea169636fa155f3621a8d9c37c7f54"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "f2d17eeb3fea5a50ec65c6046b7883a1777e025071d8535ba3fba224ce335158"
+      "sha256": "54c1bde39aeb9994b17816a6522af8fcff6398ddaddf06370734a02bfe521c99"
     },
     {
       "path": "CONTRIBUTING.md",
       "sha256": "163b43a78ccce23408c56d65e213e9af7369b8ee7bc4dfd842a5537f3227df89"
+    },
+    {
+      "path": "ROADMAP.md",
+      "sha256": "0834f27105d21e45bee071ea9703c4df80372a9e7578953abdbf8a962e8c0bf2"
     },
     {
       "path": ".github/workflows/build.yml",
@@ -41,7 +49,7 @@
     },
     {
       "path": "pcvr/native/ddraw_probe.cpp",
-      "sha256": "d3b34fb18bd26f165d4d8d7eebaded4b99b127441af3652d1d983619382f519b"
+      "sha256": "e9a5716fcab8ce97a4583934c449f7f532388c60ec98656ecda705e0f63f7f69"
     },
     {
       "path": "pcvr/native/ddraw_probe.def",
@@ -101,7 +109,7 @@
     },
     {
       "path": "pcvr/native/stereo_preview.inl",
-      "sha256": "7d4ceee8dc7a27cc5b7c178150b8f26064f3d168adf99bd418220e3171d6b9ec"
+      "sha256": "7316fff133fc6b3d0c8e6b59e6f4abdd3b84cd5e34be6c7106fa8c74135288c4"
     },
     {
       "path": "pcvr/native/texture_image_tests.cpp",
@@ -113,7 +121,7 @@
     },
     {
       "path": "pcvr/native/texture_pack.inl",
-      "sha256": "4f48076687f32bfb9e157826c9e39b1c03db6f5857420f47350ad52ba48cb1e9"
+      "sha256": "d4109633b3b304de9b86530150f15b57a0d28b2d1b247aea9843a12e06fbae20"
     },
     {
       "path": "pcvr/native/timing_research.inl",
@@ -125,15 +133,15 @@
     },
     {
       "path": "pcvr/native/xr_bridge_tests.cpp",
-      "sha256": "e087b6f42fd1a4807af01fc5b536a69429fe815812b326c30fda6973242dff4d"
+      "sha256": "9bcd3beaa71574290637a7d83281c869614019e1cf10305bf2ec2a55a05e90ca"
     },
     {
       "path": "pcvr/native/xr_bridge.cpp",
-      "sha256": "3e4a4a67095eabc1103eadf7e65341fc55e9d303d9bf6654fd4c6a89175a66f0"
+      "sha256": "fa5fdb73ccc280fd23d67835d5b25076a00fb2680b63e2fbc5e2ab4359495238"
     },
     {
       "path": "pcvr/native/xr_bridge.h",
-      "sha256": "afe25035d51c3a268c460fa9087334c9e5a82074a0ce42a22ed13fc23841c383"
+      "sha256": "be6da399459e7beffd2483fda1abb3d5a313cefa7036d9c048fcfaa9da9d0403"
     },
     {
       "path": "pcvr/native/xr_math_tests.cpp",
@@ -197,7 +205,7 @@
     },
     {
       "path": "pcvr/run-probe.ps1",
-      "sha256": "24d1bd6e0de029c9e180fd1bdbc954e6984e6b4b9c20f28f11801c38afd4abe7"
+      "sha256": "b179ef96ce3cc8c7a89d4b62e015499b46784fafe7e2d8beb19443023f67d567"
     },
     {
       "path": "pcvr/graphics-quality.ps1",
@@ -213,7 +221,7 @@
     },
     {
       "path": "pcvr/test-replay.ps1",
-      "sha256": "d435f9b9317f5b5c9a8635db7c1218e7d1aab8c048bb883d73e50653a39ff469"
+      "sha256": "667cde257c63669794773c7f7e8d3ad6366e380249a5914f4e903c8d8a8b06a2"
     },
     {
       "path": "pcvr/check-startup.ps1",
@@ -221,7 +229,7 @@
     },
     {
       "path": "pcvr/vr-settings.json",
-      "sha256": "5e5743c5ba47f2efef693db2a89c5541566870854f4313584bb87fc2eb64ce91"
+      "sha256": "8785ef465b05c14b2b686fd749b1586cf7c7b8c3464059d4ed3576d8ee261191"
     },
     {
       "path": "pcvr/play-source-vr.cmd",
@@ -238,14 +246,6 @@
     {
       "path": "pcvr/texture-packs/README.md",
       "sha256": "2fdfc38ab982517751af0595bfeaa2eea1f242c79926fbd501aabd3d4c50102d"
-    },
-    {
-      "path": ".gitattributes",
-      "sha256": "4a3de6ec248ab0f626ae70b9e8f9ad7b4ce0df8f0e07b8c4a760b8714a9a264a"
-    },
-    {
-      "path": "ROADMAP.md",
-      "sha256": "b56bd2af6210011baac0f3bd265416e3dcb2fc6caf1448fd1259399529a971b0"
     }
   ]
 }

@@ -13,6 +13,10 @@ alpha: build instructions are below. Version 17 received positive headset
 feedback; version 18 adds locally tested gun rendering and cutscene reload fixes
 and still needs physical feedback. See [changes and known issues](CHANGELOG.md).
 
+The development candidate on this branch is **probe 19**, adding adjustable
+vibration and cancellation requests on focus/tracking loss. It still needs a
+physical headset test; the tagged alpha 18 source remains available separately.
+
 ## Features
 
 - Head tracking and separate OpenXR eye rendering at 1200x1200 per eye by default.
@@ -119,6 +123,12 @@ Positive gun pitch lowers the barrel and shooting ray. If performance suffers,
 try an eye size of 1000 or 800 and lower AA. `AimDownReload`, `Haptics`,
 `SuppressLetterbox` and `HeadsetVisibility` are switches. Explicit parameters to
 `run-probe.ps1` override the profile. This does not enable a frame-rate unlock.
+
+In the probe 19 candidate, `HapticStrength` is an integer percentage from 0 to
+200: 100 preserves the existing pulse feel, 50 halves amplitude, 200 doubles it
+and 0 is silent. Trigger/reload pulses acknowledge input; they do not yet detect
+actual native shots, ammo refill, hits or damage. Strength and focus-loss behavior
+need physical testing before release.
 
 ## Texture packs
 

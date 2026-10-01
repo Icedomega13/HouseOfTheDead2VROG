@@ -7,7 +7,7 @@ using ProbeLog=void(*)(const char*,...);
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
 void configure_xr_replay(float yaw_degrees,bool passive,bool combat=false);
 #endif
-void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees=15,bool haptics=true,bool aim_down_reload=true,float down_reload_degrees=55);
+void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees=15,bool haptics=true,bool aim_down_reload=true,float down_reload_degrees=55,float haptic_scale=1);
 struct XrGameInput { bool active=false,aim_valid=false,fire=false,reload=false,start=false,back=false; float x=320,y=240,menu_x=0,menu_y=0; };
 XrGameInput xr_game_input();
 unsigned xr_eye_size();

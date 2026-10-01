@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — probe version 19 candidate
+
+- Adjustable `HapticStrength` from 0 to 200 percent; 100 preserves prior feel.
+- Request cancellation of submitted vibration on tracking/focus/input loss,
+  invalid origin, disable/zero strength and XR lifecycle failure.
+- Handle positive not-focused statuses without claiming a pulse was delivered.
+- Reload pattern takes priority when trigger and reload have simultaneous edges.
+- Bound impact traces with cached content keys, UVs and tint; replay traces
+  distinguish cached same-size textures. No hit-sprite placement change yet.
+- 734 local regression checks and a separate 60-second native replay passed.
+
+Physical feedback is pending. Haptics acknowledge input, not native ammo, hit or
+damage events. Published `v0.1.0-alpha.18` and the local playable fallback remain
+preserved; the candidate is a development change, not a 1.0 release.
+
 ## v0.1.0-alpha.18 — 2026-10-01
 
 First public, source-only alpha of the original Windows game's OpenXR PCVR mod.

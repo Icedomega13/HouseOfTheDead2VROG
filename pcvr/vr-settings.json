@@ -3,6 +3,7 @@
   "UnitsPerMetre": 10,
   "GunPitchDegrees": 15,
   "Haptics": true,
+  "HapticStrength": 100,
   "AimDownReload": true,
   "DownReloadDegrees": 55,
   "Antialiasing": 4,

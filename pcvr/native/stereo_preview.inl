@@ -40,10 +40,12 @@ static void configure_stereo() {
     int pitch_milli=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"GunPitchMilliDegrees",15000,path));
     float gun_pitch=static_cast<float>(std::clamp(pitch_milli,-45000,45000))/1000;
     bool haptics=GetPrivateProfileIntW(L"OpenXR",L"Haptics",1,path)!=0;
+    int haptic_percent=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"HapticStrength",100,path));
+    if(haptic_percent<0||haptic_percent>200) haptic_percent=100;
     bool down_reload=GetPrivateProfileIntW(L"OpenXR",L"AimDownReload",1,path)!=0;
     UINT down_degrees=GetPrivateProfileIntW(L"OpenXR",L"DownReloadDegrees",55,path);
     down_degrees=std::clamp(down_degrees,35u,85u);
-    configure_xr(xr,static_cast<float>(units),eye_size,log_line,gun_pitch,haptics,down_reload,static_cast<float>(down_degrees));
+    configure_xr(xr,static_cast<float>(units),eye_size,log_line,gun_pitch,haptics,down_reload,static_cast<float>(down_degrees),haptic_percent/100.0f);
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
     overlay_audit=GetPrivateProfileIntW(L"OpenXR",L"ReplayOverlayAudit",0,path)!=0;
     int replay_yaw=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"ReplayYawDegrees",0,path));
@@ -76,26 +78,26 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
     if(overlay_audit&&fvf==0x1c4) {
         auto p=static_cast<const float*>(vertices);
-        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);
-        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);if(texture_dump_enabled)replacement_texture(texture);texture->Release();}
-        static std::vector<std::array<int,5>> seen;
-        std::array<int,5> key={static_cast<int>(count),static_cast<int>(td.dwWidth),static_cast<int>(td.dwHeight),
-            static_cast<int>(std::clamp(p[2],-10.0f,10.0f)*10000),static_cast<int>(std::clamp(p[3],-10.0f,10.0f)*10000)};
+        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);std::string texture_key="none";
+        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);if(texture_dump_enabled)replacement_texture(texture);texture_key=cached_texture_key(texture);texture->Release();}
+        static std::vector<std::string> seen;
+        std::string key=std::to_string(count)+":"+std::to_string(td.dwWidth)+":"+std::to_string(td.dwHeight)+":"+texture_key+":"+
+            std::to_string(static_cast<int>(std::clamp(p[2],-10.0f,10.0f)*10000))+":"+std::to_string(static_cast<int>(std::clamp(p[3],-10.0f,10.0f)*10000));
         if(seen.size()<256&&std::find(seen.begin(),seen.end(),key)==seen.end()) {
             seen.push_back(key);
             D3DMATRIX projection={};device->GetTransform(D3DTRANSFORMSTATE_PROJECTION,&projection);
-            log_line("RHW_AUDIT frame=%ld caller=%p parent=%p count=%lu texture=%lux%lu xyzrhw=%.6g,%.6g,%.6g,%.6g projection_xy=%.6g,%.6g projection_z=%.6g,%.6g,%.6g,%.6g",scene_count,replay_draw_caller,replay_draw_parent,count,td.dwWidth,td.dwHeight,p[0],p[1],p[2],p[3],projection._11,projection._22,projection._33,projection._34,projection._43,projection._44);
+            log_line("RHW_AUDIT frame=%ld caller=%p parent=%p count=%lu texture=%lux%lu xyzrhw=%.6g,%.6g,%.6g,%.6g projection_xy=%.6g,%.6g projection_z=%.6g,%.6g,%.6g,%.6g texture_key=%s uv=%.5g,%.5g color=%08lx",scene_count,replay_draw_caller,replay_draw_parent,count,td.dwWidth,td.dwHeight,p[0],p[1],p[2],p[3],projection._11,projection._22,projection._33,projection._34,projection._43,projection._44,texture_key.c_str(),p[6],p[7],reinterpret_cast<const DWORD*>(p)[4]);
         }
     }
     if(overlay_audit&&fvf==0x112&&count==4){
-        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);
-        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);texture->Release();}
-        static std::vector<std::array<int,2>> seen_xyz;
-        std::array<int,2> key={static_cast<int>(td.dwWidth),static_cast<int>(td.dwHeight)};
+        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);std::string texture_key="none";
+        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);if(texture_dump_enabled)replacement_texture(texture);texture_key=cached_texture_key(texture);texture->Release();}
+        static std::vector<std::string> seen_xyz;
+        std::string key=std::to_string(td.dwWidth)+":"+std::to_string(td.dwHeight)+":"+texture_key;
         if(seen_xyz.size()<128&&std::find(seen_xyz.begin(),seen_xyz.end(),key)==seen_xyz.end()){
             seen_xyz.push_back(key);auto p=static_cast<const float*>(vertices);D3DMATRIX world={},view={};
             device->GetTransform(D3DTRANSFORMSTATE_WORLD,&world);device->GetTransform(D3DTRANSFORMSTATE_VIEW,&view);
-            log_line("XYZ_QUAD_AUDIT frame=%ld caller=%p texture=%lux%lu xyz=%.6g,%.6g,%.6g world_translation=%.6g,%.6g,%.6g view_translation=%.6g,%.6g,%.6g",scene_count,replay_draw_caller,td.dwWidth,td.dwHeight,p[0],p[1],p[2],world._41,world._42,world._43,view._41,view._42,view._43);
+            log_line("XYZ_QUAD_AUDIT frame=%ld caller=%p texture=%lux%lu xyz=%.6g,%.6g,%.6g world_translation=%.6g,%.6g,%.6g view_translation=%.6g,%.6g,%.6g texture_key=%s",scene_count,replay_draw_caller,td.dwWidth,td.dwHeight,p[0],p[1],p[2],world._41,world._42,world._43,view._41,view._42,view._43,texture_key.c_str());
         }
     }
 #endif
@@ -105,7 +107,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
         viewport.dwWidth<2 || viewport.dwHeight<2) return draw(vertices);
     using Transform=HRESULT(WINAPI*)(void*,D3DTRANSFORMSTATETYPE,LPD3DMATRIX);
     auto set_transform=original_slot<Transform>(object,11);
-    bool audit_effect=false;DDSURFACEDESC2 effect_texture={};effect_texture.dwSize=sizeof(effect_texture);
+    bool audit_effect=false;DDSURFACEDESC2 effect_texture={};effect_texture.dwSize=sizeof(effect_texture);std::string effect_key="uncached";
     static unsigned effect_samples=0;
     static std::vector<std::array<int,6>> effect_positions;
     if(effect_audit&&fvf==0x1c4&&count==4&&effect_samples<96&&xr_game_input().fire){
@@ -115,6 +117,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
                 audit_effect=(effect_texture.dwWidth==32&&effect_texture.dwHeight==32)||
                     (effect_texture.dwWidth==64&&effect_texture.dwHeight==64)||
                     (effect_texture.dwWidth==512&&effect_texture.dwHeight==64);
+            if(audit_effect) effect_key=cached_texture_key(texture);
             texture->Release();
         }
         if(audit_effect){
@@ -247,7 +250,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
             data=adjusted.data();
             if(audit_effect){
                 const auto p=static_cast<const float*>(vertices);auto out=reinterpret_cast<const float*>(data);auto aim=xr_game_input();
-                log_line("EFFECT_AUDIT frame=%ld sample=%u eye=%u texture=%lux%lu native_xy_z_rhw=%.6g,%.6g,%.6g,%.6g eye_xy=%.6g,%.6g aim=%.6g,%.6g visible=%d viewport=%lu,%lu,%lu,%lu projection_xy=%.6g,%.6g",scene_count,effect_samples,eye,effect_texture.dwWidth,effect_texture.dwHeight,p[0],p[1],p[2],p[3],out[0],out[1],aim.x,aim.y,visible,viewport.dwX,viewport.dwY,viewport.dwWidth,viewport.dwHeight,projection._11,projection._22);
+                log_line("EFFECT_AUDIT frame=%ld sample=%u eye=%u texture=%lux%lu native_xy_z_rhw=%.6g,%.6g,%.6g,%.6g eye_xy=%.6g,%.6g aim=%.6g,%.6g visible=%d viewport=%lu,%lu,%lu,%lu projection_xy=%.6g,%.6g texture_key=%s uv=%.5g,%.5g color=%08lx",scene_count,effect_samples,eye,effect_texture.dwWidth,effect_texture.dwHeight,p[0],p[1],p[2],p[3],out[0],out[1],aim.x,aim.y,visible,viewport.dwX,viewport.dwY,viewport.dwWidth,viewport.dwHeight,projection._11,projection._22,effect_key.c_str(),p[6],p[7],reinterpret_cast<const DWORD*>(p)[4]);
                 if(eye==1)++effect_samples;
             }
         }
