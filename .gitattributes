@@ -1,0 +1,2 @@
+# Preserve the reviewed source bytes and SOURCE-MANIFEST hashes across checkouts.
+* -text

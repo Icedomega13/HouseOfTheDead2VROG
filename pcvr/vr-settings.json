@@ -1,0 +1,12 @@
+{
+  "EyeSize": 1200,
+  "UnitsPerMetre": 10,
+  "GunPitchDegrees": 15,
+  "Haptics": true,
+  "AimDownReload": true,
+  "DownReloadDegrees": 55,
+  "Antialiasing": 4,
+  "AnisotropicFiltering": 8,
+  "SuppressLetterbox": true,
+  "HeadsetVisibility": true
+}

@@ -1,0 +1,29 @@
+name: Windows source build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify dependencies
+        shell: powershell
+        run: ./pcvr/prepare-deps.ps1
+      - name: Build x86 production and replay tools
+        shell: cmd
+        run: |
+          call pcvr\build.cmd
+          if errorlevel 1 exit /b 1
+          call pcvr\build-replay.cmd
+          if errorlevel 1 exit /b 1
+      - name: Test source without a game or headset
+        shell: powershell
+        run: ./pcvr/test-source.ps1

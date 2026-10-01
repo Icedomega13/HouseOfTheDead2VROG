@@ -1,0 +1,25 @@
+# Local game installations, disc images, captures, dependency archives and builds.
+/working/
+/build/
+/dist/
+/releases/
+/source-material/
+.vs/
+.idea/
+__pycache__/
+*.pyc
+*.dll
+*.exe
+*.lib
+*.obj
+# The authored text OBJ is a source asset, not a compiler object.
+!pcvr/assets/ams-pistol-v1.obj
+*.pdb
+*.exp
+*.zip
+*.iso
+*.bin
+*.bmp
+*.png
+*.log
+*.lnk
