@@ -169,3 +169,10 @@ The authored mod is licensed under [MIT](LICENSE). The original game remains
 proprietary and must be supplied separately. Game files, disc images, captures,
 third-party DLLs and private HD artwork are excluded. This repository contains
 only the original-PC mod; the separate native Quest project is not included.
+
+## Future releases
+
+A later GitHub release is planned to provide an easy Windows installer. Players
+will select their separately obtained game files, with optional links to help
+find them; the installer will contain only the mod and permitted dependencies.
+See [the installer roadmap](ROADMAP.md). The current alpha is source-only.
