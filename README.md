@@ -35,7 +35,7 @@ for supported downloads, updates, rollback, removal and troubleshooting. The set
 EXE is unsigned; its release includes checksums. Game files and an HD texture pack
 are not included.
 
-The development candidate on this branch is **probe 23**, adding a left-Y toggle
+The community installer uses **probe 23**, adding a left-Y toggle
 for both headset aiming markers. It also hides the observed
 unused player-two join/credit footer in the headset while keeping ammo in place.
 It retains probe 20's near-screen shot-flash correction and probe 19's
@@ -129,6 +129,9 @@ and is separate from the higher-resolution headset image. If the runtime reports
 no available headset, reconnect it and restart the game.
 
 ## Controls and settings
+
+These controls describe the current probe-23 installer. For matching source,
+build the release tag shown in the developer commands above.
 
 | Control | Action |
 |---|---|
