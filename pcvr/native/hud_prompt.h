@@ -8,11 +8,12 @@ namespace hotd2_hud {
 struct Vertex {float x,y,z,rhw;uint32_t diffuse,specular;float u,v;};
 static_assert(sizeof(Vertex)==32,"Observed native RHW stride");
 struct Bounds {float left=0,right=0,top=0,bottom=0,z=0,rhw=0;};
-enum class Text {Other,Join,Credits};
+enum class Text {Other,Join,Credits,CreditDigit};
 inline Text text_identity(const char* key) {
     if(!key) return Text::Other;
     if(!std::strcmp(key,"3666b222f8a0a64b862c4597e5ba4f8300ba3e283bcc6616eebdbee9d30589a2")) return Text::Join;
     if(!std::strcmp(key,"e2ee80a79481fe8dea2918bb29044f975a434f8b2edd93d11c550eede02c43e8")) return Text::Credits;
+    if(!std::strcmp(key,"2c3169048b14d83c03789820105940798e1096be9f7d709476ad643eaa5e6f41")) return Text::CreditDigit;
     return Text::Other;
 }
 inline bool footer_quad(const void* data,unsigned count,Bounds& out) {
@@ -39,6 +40,14 @@ inline bool footer_quad(const void* data,unsigned count,Bounds& out) {
     }
     return true;
 }
+inline bool credit_count_slot(const Bounds& b,unsigned width,unsigned height) {
+    // Captured native first/second count slots. Never classify the shared font
+    // elsewhere: it also supplies dialogue and other HUD text.
+    return width==16&&height==32&&
+        (std::fabs(b.left-518)<.5f||std::fabs(b.left-531.6f)<.5f)&&
+        std::fabs(b.right-b.left-13.6f)<.5f&&
+        std::fabs(b.top-427)<.5f&&std::fabs(b.bottom-454.2f)<.5f;
+}
 class PromptFilter {
     uint32_t frame=0,credits_frame=0;bool frame_valid=false,credits_valid=false;Bounds credits={};
 public:
@@ -51,6 +60,7 @@ public:
     bool hide(const void* data,unsigned count,unsigned width,unsigned height,Text text) {
         Bounds b;if(!footer_quad(data,count,b)) return false;
         float w=b.right-b.left,h=b.bottom-b.top;
+        if(text==Text::CreditDigit&&credit_count_slot(b,width,height)) return true;
         if(width==128&&height==16&&text==Text::Join&&std::fabs(w/h-8)<.05f) return true;
         if(width==128&&height==32&&text==Text::Credits&&std::fabs(w/h-4)<.05f) {
             credits=b;credits_frame=frame;credits_valid=frame_valid;return true;

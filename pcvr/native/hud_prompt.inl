@@ -1,8 +1,16 @@
 #include "hud_prompt.h"
 static bool hide_unused_player_two=true;
 static hotd2_hud::PromptFilter unused_prompt_filter;
-struct PromptSource {IDirectDrawSurface7* source;DWORD unique;hotd2_hud::Text text;};
+struct PromptSource {IDirectDrawSurface7* source;DWORD unique;hotd2_hud::Text text;bool readable;};
 static std::vector<PromptSource> prompt_sources;
+static void remember_credit_digit(IDirectDrawSurface7* source) {
+    DWORD unique=0;if(FAILED(source->GetUniquenessValue(&unique))) return;
+    for(auto& entry:prompt_sources) if(entry.source==source&&entry.unique==unique&&entry.readable) {
+        // Authenticate new count glyphs only through a freshly matched credit
+        // row. A changed source can never regain its cached identity.
+        entry.text=hotd2_hud::Text::CreditDigit;return;
+    }
+}
 static hotd2_hud::Text prompt_texture_identity(IDirectDrawSurface7* source,const DDSURFACEDESC2& desc) {
     DWORD unique=0;
     if(FAILED(source->GetUniquenessValue(&unique))) return hotd2_hud::Text::Other;
@@ -11,7 +19,7 @@ static hotd2_hud::Text prompt_texture_identity(IDirectDrawSurface7* source,const
         return entry.text; // Changed or failed sources stay native; no repeated readbacks.
     }
     if(prompt_sources.size()>=64) return hotd2_hud::Text::Other;
-    hotd2_hud::Text text=hotd2_hud::Text::Other;
+    hotd2_hud::Text text=hotd2_hud::Text::Other;bool readable=false;
     DWORD bits=desc.ddpfPixelFormat.dwRGBBitCount;
     if((bits==16||bits==32)&&(desc.ddpfPixelFormat.dwFlags&DDPF_RGB)&&
         desc.ddpfPixelFormat.dwRBitMask&&desc.ddpfPixelFormat.dwGBitMask&&desc.ddpfPixelFormat.dwBBitMask) {
@@ -34,14 +42,14 @@ static hotd2_hud::Text prompt_texture_identity(IDirectDrawSurface7* source,const
             // Cache the post-read value, then reject any subsequent change.
             if(SUCCEEDED(source->Unlock(nullptr))&&SUCCEEDED(source->GetUniquenessValue(&after))) {
                 unique=after;
-                auto key=hotd2_texture::content_key(image);text=hotd2_hud::text_identity(key.c_str());
+                auto key=hotd2_texture::content_key(image);readable=!key.empty();text=hotd2_hud::text_identity(key.c_str());
                 if(prompt_sources.size()<8) log_line("VR_HUD identity size=%lux%lu key=%s matched=%d",desc.dwWidth,desc.dwHeight,key.c_str(),static_cast<int>(text));
             }
             else if(prompt_sources.size()<8) log_line("VR_HUD identity invalidated before=%lu after=%lu",unique,after);
         }
         else if(prompt_sources.size()<8) log_line("VR_HUD identity lock_hr=%08lx",lock_hr);
     }
-    source->AddRef();prompt_sources.push_back({source,unique,text});
+    source->AddRef();prompt_sources.push_back({source,unique,text,readable});
     return text;
 }
 static bool hide_player_two_draw(IDirect3DDevice7* device,DWORD fvf,const void* vertices,DWORD count,const D3DVIEWPORT7& viewport,uint32_t frame) {
@@ -53,8 +61,10 @@ static bool hide_player_two_draw(IDirect3DDevice7* device,DWORD fvf,const void* 
     bool hide=false;
     if(SUCCEEDED(texture->GetSurfaceDesc(&desc))) {
         auto text=hotd2_hud::Text::Other;
-        if(desc.dwWidth==128&&(desc.dwHeight==16||desc.dwHeight==32)) text=prompt_texture_identity(texture,desc);
+        bool count_slot=hotd2_hud::credit_count_slot(bounds,desc.dwWidth,desc.dwHeight);
+        if((desc.dwWidth==128&&(desc.dwHeight==16||desc.dwHeight==32))||count_slot) text=prompt_texture_identity(texture,desc);
         hide=unused_prompt_filter.hide(vertices,count,desc.dwWidth,desc.dwHeight,text);
+        if(hide&&count_slot&&text==hotd2_hud::Text::Other) remember_credit_digit(texture);
     }
     texture->Release();
     if(hide){static unsigned reports=0;if(reports++<6) log_line("VR_HUD unused player-two footer suppressed in eye atlas; desktop preserved");}

@@ -58,5 +58,19 @@ int main() {
     require(text_identity("9868a95bb15eaf8b009890e3ad6dc416fb273274cb5ad478b38242ce2b5f39d2")==Text::Other,"continue graphic preserved");
     require(text_identity("b57495c040ac67156056b8be26bddec01796425eb7cd52548b6e867ea005594f")==Text::Other,"game-over graphic preserved");
     require(text_identity(nullptr)==Text::Other,"unknown identity preserved");
+    auto digit=text_identity("2c3169048b14d83c03789820105940798e1096be9f7d709476ad643eaa5e6f41");
+    require(digit==Text::CreditDigit,"captured five content identity");
+    PromptFilter fresh;fresh.begin(1);quad(p,518,427,531.6f,454.2f);
+    require(fresh.hide(p,4,16,32,digit),"five preceding first label is hidden");
+    fresh.begin(90);
+    require(fresh.hide(p,4,16,32,digit),"five remains hidden throughout label blink gap");
+    quad(p,531.6f,427,545.2f,454.2f);
+    require(fresh.hide(p,4,16,32,digit),"authenticated second counter slot hidden");
+    quad(p,450,427,463.6f,454.2f);
+    require(!fresh.hide(p,4,16,32,digit),"same glyph outside counter slots preserved");
+    quad(p,518,400,531.6f,427.2f);
+    require(!fresh.hide(p,4,16,32,digit),"same glyph on different row preserved");
+    quad(p,518,427,531.6f,454.2f);
+    require(!fresh.hide(p,4,32,32,digit),"same-sized ammo quad cannot become credit digit");
     printf("PASS %u native HUD prompt checks\n",checks);return 0;
 }

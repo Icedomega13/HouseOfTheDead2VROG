@@ -13,7 +13,7 @@ alpha: build instructions are below. Version 17 received positive headset
 feedback; version 18 adds locally tested gun rendering and cutscene reload fixes
 and still needs physical feedback. See [changes and known issues](CHANGELOG.md).
 
-The development candidate on this branch is **probe 21**, hiding the observed
+The development candidate on this branch is **probe 22**, hiding the observed
 unused player-two join/credit footer in the headset while keeping ammo in place.
 It retains probe 20's near-screen shot-flash correction and probe 19's
 adjustable vibration and cancellation requests on focus/tracking loss. Physical
@@ -131,6 +131,11 @@ player-two join/credit footer. Set it to false to restore that headset display.
 Title/start and other messages retain their native paths; ammo is unchanged.
 Unrecognized/modified prompt graphics remain visible. Broader campaign and
 physical headset coverage remain pending.
+
+Probe 22 corrects the credit count that still flashed in version 21: the known
+five is matched directly in its native counter slots, and other stable count
+glyphs are remembered after a recognized credit row authenticates them. They
+stay hidden when the label blinks off. The shared font remains native elsewhere.
 
 In the probe 19 candidate, `HapticStrength` is an integer percentage from 0 to
 200: 100 preserves the existing pulse feel, 50 halves amplitude, 200 doubles it

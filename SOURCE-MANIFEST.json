@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "release": "development-probe-21",
-  "probe_version": 21,
+  "release": "development-probe-22",
+  "probe_version": 22,
   "files": [
     {
       "path": "README.md",
-      "sha256": "bb1167d556b7ede58a27e8cac0b4933e19aaf6875f270438a071904dac902dc6"
+      "sha256": "fd9376065a16064aee1930121da769790d431b20059c3a7795e0cd135ec11386"
     },
     {
       "path": "LICENSE",
@@ -25,7 +25,7 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "395cfd4dbdb6e871e42b3a98bce177e633f52a5ca21b3fbd6dc544d7735a95a3"
+      "sha256": "9e549898427364c30ae51834178a71eac5ed747f4db10f88ec31ea10035f35b7"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -33,7 +33,7 @@
     },
     {
       "path": "ROADMAP.md",
-      "sha256": "0d7c59994c96f83ff4839d763a10cd9d8f11512cd8c2acdc56f55c5498700e85"
+      "sha256": "380ab87563f0e537f5a6a8b39a33a902d159c38aa4263b885394bf5c392cd823"
     },
     {
       "path": ".github/workflows/build.yml",
@@ -49,7 +49,7 @@
     },
     {
       "path": "pcvr/native/ddraw_probe.cpp",
-      "sha256": "e5861726540afbef50c29580d4f970b4beb7bd7fbaabc74f77ad72dd05359d83"
+      "sha256": "f41e6b6a36f78c2935c93ded003eee8f8db58057348b832cc9a7a7b75cd16d45"
     },
     {
       "path": "pcvr/native/ddraw_probe.def",
@@ -68,16 +68,20 @@
       "sha256": "50e53b7c3f70c4b69ef901115b23736b7b4f5f1495f49f94f0c39e3cacdbbbb3"
     },
     {
+      "path": "pcvr/native/hud_cache_tests.cpp",
+      "sha256": "aa204a5c4088e3af74061651180ff4dd653e379cb79cc9fb418615b37b6e7cda"
+    },
+    {
       "path": "pcvr/native/hud_prompt_tests.cpp",
-      "sha256": "9fe76c3672e541c1ce91d8926acc31c3d2c9fba887b109611f4d4df8800a1d83"
+      "sha256": "7fe4d2441a97bee0add010417d7ae2b936b795cc0c7adbd32fa9e820d27ffa48"
     },
     {
       "path": "pcvr/native/hud_prompt.h",
-      "sha256": "a889ace343d1197114cdfef71f07888f22c556325d4882516b2c7783fad46c41"
+      "sha256": "17b43362cdd5df2949e5bcb6e040ec266e000e019ed4485bafc7420453c924f1"
     },
     {
       "path": "pcvr/native/hud_prompt.inl",
-      "sha256": "9aea54a69da84cd8628df2ba2c008e9d2c4309825adca66c91fc3f50e1b1a518"
+      "sha256": "3afaabf565aa92cd48219a4fdf806d391a8ff6ddc900a19063b54a04dfda0ff8"
     },
     {
       "path": "pcvr/native/input_bridge_tests.cpp",
@@ -193,7 +197,7 @@
     },
     {
       "path": "pcvr/build.cmd",
-      "sha256": "2b193864622323e5724c7cd0f630c44ec0958fff2322a639bc712182dfc09b38"
+      "sha256": "94e04db7a7fce8c815e6f6e5ac1bc3b8e6533d015fc5901b15ac2fb2f416a5fd"
     },
     {
       "path": "pcvr/build-replay.cmd",
@@ -229,7 +233,7 @@
     },
     {
       "path": "pcvr/test-source.ps1",
-      "sha256": "382a61dd2fec55a1c8d5b2561dab811c3caef013076d98859d6817a868a6a411"
+      "sha256": "7b3ea69550efd350cca84d51bb2e73327be3b2dd92b97c550219b44e927b574f"
     },
     {
       "path": "pcvr/test-replay.ps1",

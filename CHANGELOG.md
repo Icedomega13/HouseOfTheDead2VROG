@@ -1,15 +1,27 @@
 # Changelog
 
-## Unreleased — probe version 21 candidate
+## Unreleased — probe version 22 candidate
+
+- Fix the credit value that still flashed in version 21's physical test. Match
+  the captured five directly in the native credit slots; cache other stable
+  count glyphs after a freshly recognized credit row authenticates them.
+- Recognized counts no longer depend on their label appearing every frame.
+  Shared-font draws outside the count slots stay native. Changed or unreadable
+  sources cannot become cached count identities.
+- 812 local checks passed, including 34 HUD and 14 mocked production-cache
+  checks. A standalone fixture fails on version 21 and passes on version 22.
+  Physical verification of this correction remains pending.
+
+### Version 21 changes retained
 
 - Hide the observed English player-two join invitation, credit label and count
   from the headset. Match exact bitmap content and footer geometry; retain
   original desktop drawing and ammo placement.
 - Optional `HideUnusedPlayerTwo` boolean defaults to true; false restores the
   native footer. Bounded source caching avoids repeated texture readbacks.
-- Handle credit counts drawn before or after their label, with a row association
-  expiring after one following presentation. The first unassociated count can
-  remain for one frame.
+- Freshly recognize other count glyphs using a row association expiring after
+  one following presentation; unrecognized count graphics stay native until
+  authenticated. The known five is covered even before its first label.
 - Physical HUD verification and broader menu/campaign coverage remain pending.
 
 ### Version 20 changes retained

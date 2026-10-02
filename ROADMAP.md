@@ -10,7 +10,7 @@ tools or routine troubleshooting. Work proceeds through these release gates:
 | Aiming and effects | Gun, native shots and impact graphics agree throughout encounters | Probe 20 corrects near-screen shot-flash depth; physical placement and other effect coverage remain pending |
 | Rendering | Solid gun, clean dialogue/transitions and predictable wide turns | Gun depth fix locally checked; residual bars and unseen geometry need broader coverage |
 | Controls | Recenter, menus and both reload methods work reliably; resting the gun does not accidentally skip cinematics | Existing controls work in reported tests; cinematic gesture guard needs broader physical coverage |
-| VR HUD | Unused second-player join prompts stay out of single-player gameplay; ammo remains readable | Probe 21 hides the join/credit footer in local replay; physical coverage pending; ammo relocation deferred |
+| VR HUD | Unused second-player join prompts stay out of single-player gameplay; ammo remains readable | Probe 21 physical test exposed a flashing count; probe 22 corrects that path locally; ammo relocation deferred |
 | Haptics and gun feel | Tunable shot/reload feedback, optional damage/dry-fire patterns, restrained recoil/flash | Probe 19 adds strength and cancellation; confirmed gameplay-event detection and physical feel are pending |
 | Comfort | Consistent scale, stereo alignment and usable calibration | Positive feedback on version 17; settings and comfort need repeated physical checks |
 | Performance | Stable measured headset delivery with native gameplay speed preserved | Native timing retained; independent higher-rate rendering remains research |
@@ -39,6 +39,8 @@ Probe 21 identifies the English join/credit bitmaps by content and native footer
 geometry, then suppresses those draws and their associated count in the eyes.
 Unknown graphics remain native. Test menus, continue/death and cinematics in
 the headset; active second-player and full-route coverage remain unverified.
+Probe 22 recognizes the known five independently and caches other authenticated
+count glyphs so label blink gaps cannot expose them. Physical retesting is pending.
 
 ## Easy Windows installer — planned for a later GitHub release
 
