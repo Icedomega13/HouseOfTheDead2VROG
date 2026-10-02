@@ -14,7 +14,7 @@ tools or routine troubleshooting. Work proceeds through these release gates:
 | Haptics and gun feel | Tunable shot/reload feedback, optional damage/dry-fire patterns, restrained recoil/flash | Probe 19 adds strength and cancellation; confirmed gameplay-event detection and physical feel are pending |
 | Comfort | Consistent scale, stereo alignment and usable calibration | Positive feedback on version 17; settings and comfort need repeated physical checks |
 | Performance | Stable measured headset delivery with native gameplay speed preserved | Native timing retained; independent higher-rate rendering remains research |
-| Installation | Prebuilt mod installer, game selection, runtime checks, shortcut, updates and uninstall | Planned below; current public alpha is source-only |
+| Installation | Prebuilt mod installer, game selection, runtime checks, shortcut, updates and uninstall | Alpha-23 installer implements these; fresh-PC community setup testing pending |
 | Campaign coverage | Entire campaign, bosses, branching routes, deaths/retries and runtime interruption tested | Full-playthrough and broader hardware/runtime coverage pending |
 
 An independent high-rate renderer and a comprehensive HD texture pack may follow
@@ -42,23 +42,27 @@ the headset; active second-player and full-route coverage remain unverified.
 Probe 22 recognizes the known five independently and caches other authenticated
 count glyphs so label blink gaps cannot expose them. Physical retesting is pending.
 Probe 23 adds a left-Y cursor visibility toggle for gun-only aiming, without
-moving ammo or changing shot coordinates. Physical button/feel verification pending.
+moving ammo or changing shot coordinates. The maintainer reported a successful
+version-23 physical play-test; wider coverage remains pending.
 
-## Easy Windows installer — planned for a later GitHub release
+## Easy Windows installer — community alpha
 
-The eventual public release should install the PCVR mod without requiring players
-to compile it or run setup scripts. Installer implementation is deferred while
-the playable mod is still being polished.
+The alpha installer is now implemented; see [setup instructions](INSTALL.md).
+Players need no developer tools. It creates a separate copy from a supported
+original-PC installation, optionally uses the player's ISO, downloads verified
+dependencies, reports the active 32-bit runtime and creates a launcher/removal entry.
+Updates back up replaced mod files and preserve settings/saves. Failed replacement
+rolls back; removal retains the game/saves and modified files. Archive/disc installer
+extraction remains outside setup: select an already-installed game folder.
 
-Planned setup flow:
+Implemented setup flow:
 
 1. Select an existing original-PC game installation, or select game files the
-   player has downloaded separately. Support for archive/disc-image input should
-   be chosen after testing the actual package layouts.
+   player has downloaded and installed separately. ZIPs/disc installers are not
+   accepted as game folders; an optional ISO is used only as original media.
 2. Offer an optional **Find game files / setup help** button that opens a help or
-   acquisition page in the player's browser. A link to the abandonware site
-   suggested by the maintainer can be evaluated when installer work begins; no
-   particular site or download URL has been selected yet. The player obtains
+   acquisition page in the player's browser. The optional Find game files button
+   opens the maintainer-requested My Abandonware game page. The player obtains
    the game separately and then selects its files in setup.
 3. Validate required data and executable compatibility before installation, and
    explain missing or unsupported files clearly.
@@ -74,5 +78,5 @@ distinguish the mod from the separately supplied game.
 
 Release validation should include setup from a clean Windows system, the supported
 game package layouts, upgrades, rollback/uninstall and a physical headset test.
-The current alpha remains source-only; this roadmap does not announce an installer
-or change the current launcher.
+The installer is an alpha prerelease. Local installer lifecycle checks do not replace
+fresh-PC setup or physical community play-tests, and do not establish 1.0 readiness.

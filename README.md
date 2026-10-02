@@ -8,17 +8,20 @@ logic and intercepts DirectDraw / Direct3D 7 rendering to produce tracked stereo
 views and controller input. It is a PCVR mod, not a standalone Quest application
 or a rebuild of the game's proprietary source.
 
-**Current release: v0.1.0-alpha.18 (HD Preview 3 / probe 18).** This is a source-only
-alpha: build instructions are below. Version 17 received positive headset
-feedback; version 18 adds locally tested gun rendering and cutscene reload fixes
-and still needs physical feedback. See [changes and known issues](CHANGELOG.md).
+**Community installer alpha: v0.2.0-alpha.23 (probe 23).** Download the
+[Windows setup EXE](https://github.com/Icedomega13/HouseOfTheDead2VROG/releases/tag/v0.2.0-alpha.23)
+and follow [installation help](INSTALL.md). Select your own installed original PC
+game; setup copies it separately, downloads verified dependencies and creates a
+launcher. No game files or private HD sample are included. No compiler is needed.
+The earlier source-only `v0.1.0-alpha.18` remains available as a separate tag.
 
 The development candidate on this branch is **probe 23**, adding a left-Y toggle
 for both headset aiming markers. It also hides the observed
 unused player-two join/credit footer in the headset while keeping ammo in place.
 It retains probe 20's near-screen shot-flash correction and probe 19's
-adjustable vibration and cancellation requests on focus/tracking loss. Physical
-testing remains pending; the tagged alpha 18 source is available separately.
+adjustable vibration and cancellation requests on focus/tracking loss. The
+maintainer reported a successful version-23 headset play-test. Installer setup
+on fresh community PCs and broader campaign/hardware coverage remain pending.
 
 ## Features
 
@@ -43,7 +46,7 @@ the original timing. Independent high-rate rendering is future work.
   `c6b4116788b7f68c56860fb9cc8a94bf984e620907031e4bc3db43623dbe579a`.
   Other executable revisions, the modern remake and emulated console versions
   have not been validated; executable-specific hooks may not work on them.
-- Visual Studio 2022 or newer / Build Tools with **Desktop development with C++**,
+- For source builds only: Visual Studio 2022 or newer / Build Tools with **Desktop development with C++**,
   MSVC x86/x64 tools and a Windows SDK. The build auto-discovers the installation.
 - An OpenXR runtime supporting **32-bit applications** and a connected headset.
   Quest 3 through Virtual Desktop / VirtualDesktopXR is the tested development
@@ -53,6 +56,9 @@ the original timing. Independent high-rate rendering is future work.
   SDK/loader and dgVoodoo2 2.87.5 backend. See [third-party notices](THIRD_PARTY.md).
 
 ## Build and set up
+
+Most players should use the [installer](INSTALL.md). The commands below are for
+developers who want to compile the mod themselves.
 
 Run these commands from the repository root. `-ExecutionPolicy Bypass` applies to
 that PowerShell process; it does not change the system execution policy.
@@ -143,7 +149,8 @@ In probe 23, press **left Y** to toggle the green aiming dot and native red
 crosshair without hiding the gun or changing aiming/shooting. X remains Back;
 right A/B remain Start/Reload. The toggle lasts for this session and survives
 focus loss. `AimingCursor` (boolean, default true) controls starting visibility.
-No menu is required. Physical button/aiming verification remains pending.
+No menu is required. The maintainer reported that the version-23 play-test went
+well; community controller/runtime coverage is still needed.
 
 In the probe 19 candidate, `HapticStrength` is an integer percentage from 0 to
 200: 100 preserves the existing pulse feel, 50 halves amplitude, 200 doubles it

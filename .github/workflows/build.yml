@@ -27,3 +27,8 @@ jobs:
       - name: Test source without a game or headset
         shell: powershell
         run: ./pcvr/test-source.ps1
+      - name: Build installer and test install/update/removal
+        shell: powershell
+        run: |
+          ./pcvr/build-installer.ps1
+          ./pcvr/test-installer.ps1

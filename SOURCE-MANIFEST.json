@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "release": "development-probe-23",
+  "release": "v0.2.0-alpha.23",
   "probe_version": 23,
   "files": [
     {
       "path": "README.md",
-      "sha256": "ddc97ff53b6a997a22c437f0e0b074311761377eb046c08235dd25bdf4581455"
+      "sha256": "f57c217674b33f48e1bec2c1bba28799d17974135165b1d83bce6fbbbfbba6a3"
     },
     {
       "path": "LICENSE",
@@ -25,7 +25,7 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "7ede88b4217c7d10e3f28a4047457bcf931a419a9c45e1e1957bff622ebe1c0a"
+      "sha256": "b0ae97f65df886cf95772dfeb41d65e44549c8663aab7129fad897b6cad59638"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -33,11 +33,15 @@
     },
     {
       "path": "ROADMAP.md",
-      "sha256": "5b3c680a3bbcd3816a218e9cbaccfee0d1be5aa43563393566a96361365d9b3b"
+      "sha256": "7506afbbeb6e3b5af34c7b7f076a1ce5847e0583a475682d0e845ef50c8803c5"
+    },
+    {
+      "path": "INSTALL.md",
+      "sha256": "76fb9029eae384af0af1962e091d9b4345faa1345363468d934bd65df645ae3b"
     },
     {
       "path": ".github/workflows/build.yml",
-      "sha256": "fe77ad0367dd401d8ef993eb863f06dd281b8199dc748db480565c6459fc387f"
+      "sha256": "3a51905b306b9f1af88ebad1a537cb9a4d14a2854bcfb200c9fe56b4dfb57fd7"
     },
     {
       "path": "pcvr/native/com_trace.inl",
@@ -262,6 +266,34 @@
     {
       "path": "pcvr/texture-packs/README.md",
       "sha256": "2fdfc38ab982517751af0595bfeaa2eea1f242c79926fbd501aabd3d4c50102d"
+    },
+    {
+      "path": "pcvr/build-installer.ps1",
+      "sha256": "6dc5bb1119ff86387d192a8718679b76f3f8fda8dc23f29fe036a50d627ec691"
+    },
+    {
+      "path": "pcvr/test-installer.ps1",
+      "sha256": "acfb7176e9bcf9623bd1d36a20058d596f37a3ed0f9af9312f4d4d2b44d4d199"
+    },
+    {
+      "path": "pcvr/installer/InstallerCore.cs",
+      "sha256": "780a24f37e24c867e2392fdca2ae69a0dbe757a7e5c5ce58e6f3cd6c13328d0a"
+    },
+    {
+      "path": "pcvr/installer/InstallerTests.cs",
+      "sha256": "ae0b81a93ec93ccaaab7c27a160ecb5de237a60706a43d65c79a2ff2876a0544"
+    },
+    {
+      "path": "pcvr/installer/Setup.cs",
+      "sha256": "607da417e74d0176d956538e0042d996a11623e82fb6d19a2db9ede42b54ecf9"
+    },
+    {
+      "path": "pcvr/installer/AssemblyInfo.cs",
+      "sha256": "e4049cd76afb0307924d7bc7553cf0cded42a974c4c917208a385d34507dcd8e"
+    },
+    {
+      "path": "pcvr/installer/setup.manifest",
+      "sha256": "675da55b0b8e90746f271049ee16088e8f8c16377a38065adacbd459ec9b382c"
     }
   ]
 }

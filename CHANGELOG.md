@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased — probe version 23 candidate
+## v0.2.0-alpha.23 — community installer alpha
+
+- Prebuilt Windows setup: select the original PC game, create a separate copy,
+  download checksum-verified dependencies and create a Play shortcut/removal entry.
+- Optional original ISO and game-files help link. No game files, disc images,
+  private HD artwork or third-party runtime binaries are embedded in setup.
+- Back up replaced mod files before updates, retain preferences/saves, recover
+  failed replacements, and remove only recognized mod files during uninstall.
+- 46 installer lifecycle checks passed, plus an isolated installation of the
+  real payload and DirectDraw/Direct3D graphics-stack smoke test. Fresh-PC and
+  broader community hardware testing remain pending. The setup EXE is unsigned.
+- The maintainer reported a successful physical version-23 play-test.
 
 - Left Y toggles the green aiming dot and observed native red crosshair in the
   headset. Gun, shooting, desktop output and ammo placement stay unchanged.
@@ -9,7 +20,7 @@
 - `AimingCursor` boolean defaults to true and controls launch preference; the
   runtime toggle stays in memory for the session.
 - 857 local checks passed, including actual GPU gun/dot visibility comparisons.
-  Native replay uses the same toggle helper; physical Y binding/feel pending.
+  Native replay uses the same toggle helper; broader hardware coverage is pending.
 
 ### Version 22 changes retained
 
