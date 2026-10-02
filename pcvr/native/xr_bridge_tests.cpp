@@ -1,5 +1,6 @@
 // Exercise production bridge transforms with synthetic poses; does not create an XR session.
 #define xrApplyHapticFeedback test_apply_haptic
+#define xrStopHapticFeedback test_stop_haptic
 #define xrAcquireSwapchainImage test_acquire_image
 #define xrWaitSwapchainImage test_wait_image
 #define xrReleaseSwapchainImage test_release_image
@@ -9,6 +10,7 @@
 #define xrBeginFrame test_begin_frame
 #include "xr_bridge.cpp"
 #undef xrApplyHapticFeedback
+#undef xrStopHapticFeedback
 #undef xrAcquireSwapchainImage
 #undef xrWaitSwapchainImage
 #undef xrReleaseSwapchainImage
@@ -22,6 +24,9 @@ static unsigned checks=0;
 static unsigned pulse_count=0;
 static XrHapticVibration last_pulse={};
 static XrResult haptic_result=XR_SUCCESS;
+static unsigned haptic_stop_count=0;
+static XrResult haptic_stop_result=XR_SUCCESS;
+static XrAction last_stop_action=XR_NULL_HANDLE;
 static XrResult acquire_result=XR_SUCCESS,release_result=XR_SUCCESS,end_result=XR_SUCCESS;
 static std::vector<XrResult> wait_results;
 static std::vector<XrSwapchain> waited_handles;
@@ -53,6 +58,9 @@ XRAPI_ATTR XrResult XRAPI_CALL test_end_frame(XrSession,const XrFrameEndInfo* in
 }
 XRAPI_ATTR XrResult XRAPI_CALL test_apply_haptic(XrSession,const XrHapticActionInfo*,const XrHapticBaseHeader* feedback) {
     ++pulse_count;last_pulse=*reinterpret_cast<const XrHapticVibration*>(feedback);return haptic_result;
+}
+XRAPI_ATTR XrResult XRAPI_CALL test_stop_haptic(XrSession,const XrHapticActionInfo* info) {
+    ++haptic_stop_count;last_stop_action=info->action;return haptic_stop_result;
 }
 static void require(bool ok,const char* label) {++checks;if(!ok){fprintf(stderr,"FAIL %s\n",label);exit(1);}}
 static void close(float a,float b,const char* label) {require(std::fabs(a-b)<0.0001f,label);}
@@ -118,6 +126,27 @@ int main() {
         camera=XMVector3TransformCoord(XMVectorSet(0,0,-1,1),XMLoadFloat4x4(&vm));
         close(XMVectorGetZ(camera),1,"ordinary geometry with a tiny near plane retains its world scale");
     }
+    // Native near-screen shot origin from the capture. Check the corrected
+    // depth against the existing cursor plane while moving and turning the head.
+    auto saved_left=bridge.views[0].pose,saved_right=bridge.views[1].pose;
+    for(unsigned step=0;step<3;++step) {
+        for(unsigned eye=0;eye<2;++eye) {
+            auto& pose=bridge.views[eye].pose;
+            pose.position={.15f*step+(eye==0?-.032f:.032f),.08f*step,-.04f*step};
+            pose.orientation={0,std::sin(.08f*step),0,std::cos(.08f*step)};
+            float x=0,y=0;require(xr_hud_vertex(eye,(1+.1343314f*gp._11)*320,(1-.07809962f*gp._22)*240,source,gp,x,y),"shot origin HUD available after head motion");
+            xr_eye_matrices(eye,gv,gp,v,p,true);XMFLOAT4X4 vm,pm;memcpy(&vm,&v,sizeof(vm));memcpy(&pm,&p,sizeof(pm));
+            auto projected=XMVector3TransformCoord(XMVectorSet(.1343314f,.07809962f,-1,1),XMLoadFloat4x4(&vm)*XMLoadFloat4x4(&pm));
+            close((XMVectorGetX(projected)+1)/2,x,"shot flash horizontal origin stays with cursor after head motion");
+            close((1-XMVectorGetY(projected))/2,y,"shot flash vertical origin stays with cursor after head motion");
+            if(step==1) {
+                xr_eye_matrices(eye,gv,gp,v,p,false);memcpy(&vm,&v,sizeof(vm));memcpy(&pm,&p,sizeof(pm));
+                projected=XMVector3TransformCoord(XMVectorSet(.1343314f,.07809962f,-1,1),XMLoadFloat4x4(&vm)*XMLoadFloat4x4(&pm));
+                require(std::fabs((XMVectorGetX(projected)+1)/2-x)>.1f,"old near-depth path reproduces large flash displacement");
+            }
+        }
+    }
+    bridge.views[0].pose=saved_left;bridge.views[1].pose=saved_right;
     // Lowering the barrel also lowers the aiming ray; the controller pivot stays fixed.
     configure_xr(true,10,800,nullptr,15);
     auto calibrated=calibrated_aim(1);XMFLOAT3 direction;
@@ -159,6 +188,56 @@ int main() {
     bridge.input.fire=true;controller_feedback();require(pulse_count==3&&bridge.haptics_failed,"haptic failure disables further vibration");
     bridge.input.fire=false;controller_feedback();bridge.input.fire=true;controller_feedback();require(pulse_count==3,"haptic failure is not retried every frame");
     require(xr_game_input().fire,"haptic failure leaves game input available");
+    // Strength and cancellation affect feedback only, never native input state.
+    haptic_result=XR_SUCCESS;bridge.haptics_failed=false;
+    auto feedback_reset=[&](float strength=1) {
+        configure_xr(true,10,800,nullptr,15,true,true,55,strength);
+        clear_controls();bridge.focused=bridge.valid_pose=bridge.aim_valid=bridge.recentered=true;
+        bridge.input.active=true;bridge.haptics_failed=false;
+    };
+    feedback_reset(.5f);bridge.input.fire=true;controller_feedback();
+    close(last_pulse.amplitude,.15f,"50 percent scales fire strength");
+    require(last_pulse.duration==35000000&&bridge.haptic_pulse_pending,"strength preserves pulse timing and successful output latch");
+    bridge.input.fire=false;controller_feedback();bridge.input.reload=true;controller_feedback();
+    close(last_pulse.amplitude,.075f,"50 percent scales reload strength");
+    feedback_reset(2);bridge.input.fire=true;controller_feedback();close(last_pulse.amplitude,.6f,"200 percent doubles fire strength within OpenXR range");
+    feedback_reset(9);close(bridge.haptic_scale,2,"native strength bounded above");
+    feedback_reset(-1);close(bridge.haptic_scale,0,"native negative strength bounded to off");
+    feedback_reset(std::numeric_limits<float>::quiet_NaN());close(bridge.haptic_scale,1,"nonfinite strength falls back to accepted default");
+    feedback_reset(std::numeric_limits<float>::infinity());close(bridge.haptic_scale,1,"infinite strength falls back to accepted default");
+    feedback_reset(0);unsigned before_silent=pulse_count;bridge.input.fire=true;controller_feedback();
+    require(pulse_count==before_silent&&!bridge.haptic_pulse_pending&&xr_game_input().fire,"zero strength silences feedback while firing input remains available");
+    feedback_reset();bridge.input.fire=bridge.input.reload=true;controller_feedback();
+    require(last_pulse.duration==65000000,"reload acknowledgement takes priority on simultaneous input edges");
+    close(last_pulse.amplitude,.15f,"simultaneous edge uses reload amplitude");
+    unsigned before_stop=haptic_stop_count;bridge.focused=false;controller_feedback();
+    require(haptic_stop_count==before_stop+1&&last_stop_action==bridge.vibration&&!bridge.haptic_pulse_pending,"focus loss requests one stop on the output action");
+    controller_feedback();clear_controls();require(haptic_stop_count==before_stop+1,"empty unfocused frames do not repeat cancellation");
+    feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    bridge.aim_valid=false;controller_feedback();require(haptic_stop_count==before_stop+1,"controller tracking loss stops pending feedback");
+    feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    bridge.valid_pose=false;controller_feedback();require(haptic_stop_count==before_stop+1,"head tracking loss stops pending feedback");
+    feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    bridge.recentered=false;controller_feedback();require(haptic_stop_count==before_stop+1,"invalid reference origin stops pending feedback");
+    feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    clear_controls();require(haptic_stop_count==before_stop+1&&!bridge.input.active,"clearing controller state stops pending feedback");
+    feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    configure_xr(true,10,800,nullptr,15,false);require(haptic_stop_count==before_stop+1&&!bridge.haptic_pulse_pending,"disabling feedback cancels a pending pulse");
+    feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    configure_xr(true,10,800,nullptr,15,true,true,55,0);require(haptic_stop_count==before_stop+1,"setting strength to zero cancels pending feedback");
+    feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    haptic_stop_result=XR_SESSION_NOT_FOCUSED;bridge.focused=false;clear_controls();
+    require(haptic_stop_count==before_stop+1&&!bridge.haptics_failed,"not-focused cancellation status is expected, not a fatal error");
+    haptic_stop_result=XR_SUCCESS;feedback_reset();haptic_result=XR_SESSION_NOT_FOCUSED;bridge.input.fire=true;controller_feedback();
+    require(!bridge.haptic_pulse_pending&&!bridge.haptics_failed,"not-focused apply status does not record a delivered pulse");
+    before_stop=haptic_stop_count;clear_controls();require(haptic_stop_count==before_stop,"undelivered feedback is not cancelled as if it played");
+    haptic_result=XR_SUCCESS;feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    haptic_stop_result=XR_ERROR_RUNTIME_FAILURE;stop_controller_feedback();
+    require(haptic_stop_count==before_stop+1&&bridge.haptics_failed&&xr_game_input().fire,"stop error disables feedback while preserving controller input");
+    stop_controller_feedback();require(haptic_stop_count==before_stop+1,"stop error is not retried every frame");
+    haptic_stop_result=XR_SUCCESS;feedback_reset();bridge.input.fire=true;controller_feedback();before_stop=haptic_stop_count;
+    require(!frame_check(XR_ERROR_RUNTIME_FAILURE,"test lifecycle failure")&&haptic_stop_count==before_stop+1&&!bridge.input.active,"lifecycle failure cancels vibration and controller latches");
+    bridge.focused=bridge.valid_pose=bridge.aim_valid=bridge.recentered=true;bridge.input.active=true;
     configure_xr(true,10,800,nullptr,15,true,true,55);
     bridge.haptics_failed=false;haptic_result=XR_SUCCESS;bridge.feedback_fire=bridge.feedback_reload=false;
     auto gesture_step=[&](float raw_down_degrees,int64_t milliseconds,bool button_reload=false) {
@@ -252,5 +331,23 @@ int main() {
     require(bridge.enabled&&bridge.frame_open&&!bridge.input.active,"success-qualified discarded begin remains a valid open frame");
     submit_xr_frame(nullptr);require(end_count==5&&!bridge.frame_open&&bridge.enabled,"non-rendering discarded frame closes normally without disabling VR");
     require(frame_check(XR_SESSION_LOSS_PENDING,"test success")&&bridge.enabled,"success-qualified lifecycle result remains supported");
+    configure_xr(true,10,800,nullptr,0);
+    require(xr_aim_cursor_visible(),"cursor visible by default");
+    update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"left Y first press hides cursor");
+    update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"holding Y cannot repeat toggle");
+    bridge.frame_open=bridge.valid_pose=bridge.recentered=bridge.aim_valid=bridge.input.active=true;
+    bridge.input.fire=true;bridge.aim_pose={};bridge.aim_pose.orientation.w=1;bridge.origin={};bridge.origin.orientation.w=1;
+    float cursor_x=0,cursor_y=0;require(!xr_pointer_vertex(0,cursor_x,cursor_y),"hidden cursor produces no dot vertex");
+    require(xr_game_input().aim_valid&&xr_game_input().fire,"cursor hidden preserves aiming and firing");
+    clear_controls();require(!xr_aim_cursor_visible(),"focus loss retains visibility preference");
+    update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"held Y after refocus cannot toggle");
+    update_cursor_toggle(true,false);update_cursor_toggle(true,true);
+    require(xr_aim_cursor_visible(),"release and fresh press restores cursor");
+    update_cursor_toggle(false,true);update_cursor_toggle(true,true);
+    require(xr_aim_cursor_visible(),"inactive or failed action cannot create an edge on return");
+    update_cursor_toggle(true,false);update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"next intentional press toggles once");
+    configure_xr(true,10,800,nullptr,0,true,true,55,1,false);
+    require(!xr_aim_cursor_visible(),"cursor-off profile applied at launch");
+    update_cursor_toggle(true,true);require(xr_aim_cursor_visible(),"cursor-off profile can toggle back on");
     printf("PASS %u production XR bridge checks (synthetic poses)\n",checks);return 0;
 }

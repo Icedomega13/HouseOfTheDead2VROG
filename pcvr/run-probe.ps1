@@ -1,4 +1,4 @@
-param([switch]$VR,[switch]$Mono,[ValidateRange(0,100)][double]$EyeSeparation=6.4,[ValidateRange(1,10000)][int]$UnitsPerMetre=10,[ValidateRange(400,1600)][int]$EyeSize=800,[ValidateRange(-45,45)][double]$GunPitchDegrees=15,[bool]$Haptics=$true,[bool]$AimDownReload=$true,[ValidateRange(35,85)][int]$DownReloadDegrees=55,[ValidateSet(-1,0,2,4,8,16)][int]$Antialiasing=-1,[ValidateRange(0,16)][int]$AnisotropicFiltering=0,[bool]$SuppressLetterbox=$true,[bool]$HeadsetVisibility=$true,[string]$BuildDirectory,[string]$GameDirectory,[switch]$TexturePack,[switch]$EffectAudit,[string]$DiscImage)
+param([switch]$VR,[switch]$Mono,[ValidateRange(0,100)][double]$EyeSeparation=6.4,[ValidateRange(1,10000)][int]$UnitsPerMetre=10,[ValidateRange(400,1600)][int]$EyeSize=800,[ValidateRange(-45,45)][double]$GunPitchDegrees=15,[bool]$Haptics=$true,[ValidateRange(0,200)][int]$HapticStrength=100,[bool]$AimDownReload=$true,[ValidateRange(35,85)][int]$DownReloadDegrees=55,[ValidateSet(-1,0,2,4,8,16)][int]$Antialiasing=-1,[ValidateRange(0,16)][int]$AnisotropicFiltering=0,[bool]$SuppressLetterbox=$true,[bool]$HeadsetVisibility=$true,[bool]$HideUnusedPlayerTwo=$true,[bool]$AimingCursor=$true,[string]$BuildDirectory,[string]$GameDirectory,[switch]$TexturePack,[switch]$EffectAudit,[string]$DiscImage)
 $ErrorActionPreference = 'Stop'
 if ($VR -and $Mono) {throw '-VR and -Mono cannot be combined.'}
 . (Join-Path $PSScriptRoot 'graphics-quality.ps1')
@@ -10,6 +10,11 @@ if($VR) {
     if(!$PSBoundParameters.ContainsKey('Haptics') -and $null -ne $profile.Haptics) {
         if($profile.Haptics -isnot [bool]) {throw 'Haptics must be true or false in pcvr/vr-settings.json.'}
         $Haptics=$profile.Haptics
+    }
+    if(!$PSBoundParameters.ContainsKey('HapticStrength') -and $null -ne $profile.HapticStrength) {
+        if($profile.HapticStrength -isnot [int] -and $profile.HapticStrength -isnot [long]) {throw 'HapticStrength must be an integer percentage from 0 to 200.'}
+        $HapticStrength=[int]$profile.HapticStrength
+        if($HapticStrength -lt 0 -or $HapticStrength -gt 200) {throw 'HapticStrength must be from 0 to 200.'}
     }
     if(!$PSBoundParameters.ContainsKey('AimDownReload') -and $null -ne $profile.AimDownReload) {
         if($profile.AimDownReload -isnot [bool]) {throw 'AimDownReload must be true or false in pcvr/vr-settings.json.'}
@@ -25,6 +30,14 @@ if($VR) {
     if(!$PSBoundParameters.ContainsKey('HeadsetVisibility') -and $null -ne $profile.HeadsetVisibility) {
         if($profile.HeadsetVisibility -isnot [bool]) {throw 'HeadsetVisibility must be true or false.'}
         $HeadsetVisibility=$profile.HeadsetVisibility
+    }
+    if(!$PSBoundParameters.ContainsKey('HideUnusedPlayerTwo') -and $null -ne $profile.HideUnusedPlayerTwo) {
+        if($profile.HideUnusedPlayerTwo -isnot [bool]) {throw 'HideUnusedPlayerTwo must be true or false.'}
+        $HideUnusedPlayerTwo=$profile.HideUnusedPlayerTwo
+    }
+    if(!$PSBoundParameters.ContainsKey('AimingCursor') -and $null -ne $profile.AimingCursor) {
+        if($profile.AimingCursor -isnot [bool]) {throw 'AimingCursor must be true or false.'}
+        $AimingCursor=$profile.AimingCursor
     }
     if($Antialiasing -notin @(-1,0,2,4,8,16) -or $AnisotropicFiltering -lt 0 -or $AnisotropicFiltering -gt 16){throw 'Invalid graphics-quality settings.'}
     if($EyeSize -lt 400 -or $EyeSize -gt 1600 -or $UnitsPerMetre -lt 1 -or $UnitsPerMetre -gt 10000 -or $GunPitchDegrees -lt -45 -or $GunPitchDegrees -gt 45 -or $DownReloadDegrees -lt 35 -or $DownReloadDegrees -gt 85) {throw 'Invalid VR calibration in pcvr/vr-settings.json.'}
@@ -42,7 +55,7 @@ foreach($runtimeFile in @('ddraw.dll','openxr_loader.dll')) {
     (Get-Item -LiteralPath (Join-Path $targetGame $runtimeFile)).IsReadOnly=$false
 }
 Set-Hotd2GraphicsQuality -ConfigPath (Join-Path $targetGame 'dgVoodoo.conf') -Antialiasing $Antialiasing -AnisotropicFiltering $AnisotropicFiltering
-@('[Stereo]',"Enabled=$([int](!$Mono))","SeparationMilliunits=$([int]($EyeSeparation*1000))",'[OpenXR]',"Enabled=$([int][bool]$VR)","UnitsPerMetre=$UnitsPerMetre","EyeSize=$EyeSize","GunPitchMilliDegrees=$([int]($GunPitchDegrees*1000))","Haptics=$([int]$Haptics)","AimDownReload=$([int]$AimDownReload)","DownReloadDegrees=$DownReloadDegrees","SuppressLetterbox=$([int]$SuppressLetterbox)","HeadsetVisibility=$([int]$HeadsetVisibility)","EffectAudit=$([int][bool]$EffectAudit)",'[Textures]',"Enabled=$([int][bool]$TexturePack)",'Dump=0') |
+@('[Stereo]',"Enabled=$([int](!$Mono))","SeparationMilliunits=$([int]($EyeSeparation*1000))",'[OpenXR]',"Enabled=$([int][bool]$VR)","UnitsPerMetre=$UnitsPerMetre","EyeSize=$EyeSize","GunPitchMilliDegrees=$([int]($GunPitchDegrees*1000))","Haptics=$([int]$Haptics)","HapticStrength=$HapticStrength","AimDownReload=$([int]$AimDownReload)","DownReloadDegrees=$DownReloadDegrees","SuppressLetterbox=$([int]$SuppressLetterbox)","HeadsetVisibility=$([int]$HeadsetVisibility)","HideUnusedPlayerTwo=$([int]$HideUnusedPlayerTwo)","AimingCursor=$([int]$AimingCursor)","EffectAudit=$([int][bool]$EffectAudit)",'[Textures]',"Enabled=$([int][bool]$TexturePack)",'Dump=0') |
     Set-Content -LiteralPath (Join-Path $targetGame 'pcvr-probe.ini') -Encoding ascii
 $discPath=$null
 if($DiscImage) {
@@ -68,7 +81,7 @@ try {
     if($mountedHere) {Dismount-DiskImage -ImagePath $discPath | Out-Null}
     try {
         $mode=if($VR) {'headset'} else {'desktop'}
-        $effective=[pscustomobject]@{EyeSize=$EyeSize;UnitsPerMetre=$UnitsPerMetre;GunPitchDegrees=$GunPitchDegrees;Haptics=$Haptics;AimDownReload=$AimDownReload;DownReloadDegrees=$DownReloadDegrees;Antialiasing=$Antialiasing;AnisotropicFiltering=$AnisotropicFiltering;SuppressLetterbox=$SuppressLetterbox;HeadsetVisibility=$HeadsetVisibility;TexturePack=[bool]$TexturePack;EffectAudit=[bool]$EffectAudit}
+        $effective=[pscustomobject]@{EyeSize=$EyeSize;UnitsPerMetre=$UnitsPerMetre;GunPitchDegrees=$GunPitchDegrees;Haptics=$Haptics;HapticStrength=$HapticStrength;AimDownReload=$AimDownReload;DownReloadDegrees=$DownReloadDegrees;Antialiasing=$Antialiasing;AnisotropicFiltering=$AnisotropicFiltering;SuppressLetterbox=$SuppressLetterbox;HeadsetVisibility=$HeadsetVisibility;HideUnusedPlayerTwo=$HideUnusedPlayerTwo;AimingCursor=$AimingCursor;TexturePack=[bool]$TexturePack;EffectAudit=[bool]$EffectAudit}
         & (Join-Path $PSScriptRoot 'save-session.ps1') -StartedAt $startedAt -GameExitCode $gameExitCode -Mode $mode -GameDirectory $targetGame -EffectiveCalibration $effective
     } catch {Write-Warning "Could not save session diagnostics: $($_.Exception.Message)"}
 }

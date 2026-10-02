@@ -5,13 +5,14 @@
 
 using ProbeLog=void(*)(const char*,...);
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
-void configure_xr_replay(float yaw_degrees,bool passive,bool combat=false);
+void configure_xr_replay(float yaw_degrees,bool passive,bool combat=false,bool cursor_toggle=false);
 #endif
-void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees=15,bool haptics=true,bool aim_down_reload=true,float down_reload_degrees=55);
+void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees=15,bool haptics=true,bool aim_down_reload=true,float down_reload_degrees=55,float haptic_scale=1,bool aiming_cursor=true);
 struct XrGameInput { bool active=false,aim_valid=false,fire=false,reload=false,start=false,back=false; float x=320,y=240,menu_x=0,menu_y=0; };
 XrGameInput xr_game_input();
 unsigned xr_eye_size();
 bool xr_frame_ready();
+bool xr_aim_cursor_visible();
 bool xr_hud_vertex(unsigned eye,float x,float y,const D3DVIEWPORT7& source,const D3DMATRIX& projection,float& out_x,float& out_y);
 bool xr_pointer_vertex(unsigned eye,float& x,float& y);
 bool xr_gun_matrices(unsigned eye,D3DMATRIX& view,D3DMATRIX& projection);
