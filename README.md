@@ -8,10 +8,40 @@ logic and intercepts DirectDraw / Direct3D 7 rendering to produce tracked stereo
 views and controller input. It is a PCVR mod, not a standalone Quest application
 or a rebuild of the game's proprietary source.
 
-**Current release: v0.1.0-alpha.18 (HD Preview 3 / probe 18).** This is a source-only
-alpha: build instructions are below. Version 17 received positive headset
-feedback; version 18 adds locally tested gun rendering and cutscene reload fixes
-and still needs physical feedback. See [changes and known issues](CHANGELOG.md).
+**Community installer alpha: v0.2.1-alpha.23 (probe 23).** Download the
+[Windows setup EXE](https://github.com/Icedomega13/HouseOfTheDead2VROG/releases/tag/v0.2.1-alpha.23)
+and follow [installation help](https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.1-alpha.23/INSTALL.md). Select the Windows PC disc-image ZIP
+you downloaded; setup prepares your VR game copy and disc automatically. No unzip
+or original flatscreen installation is needed. IMG/ISO and existing game folders
+also work. Setup downloads verified dependencies and creates a launcher. No game
+files or private HD sample are included. No compiler is needed.
+The earlier source-only `v0.1.0-alpha.18` remains available as a separate tag.
+
+## Quick start for players
+
+1. Download **HotD2VR-Setup-0.2.1-alpha.23.exe** from the release above.
+2. Select your original Windows game's downloaded **disc-image ZIP as-is**, choose
+   a destination with at least 3 GB free, then click **Install / update**. Setup
+   extracts the game and prepares its disc automatically; no flatscreen install.
+3. Connect your Quest through Virtual Desktop, select **VDXR** in Streamer, then
+   launch **Play HotD2VR** from the desktop. No compiler or SDK is needed.
+
+Prefer aiming with the gun alone? Press **Y on the left controller** to hide both
+the green aiming dot and native red crosshair. Press Y again to restore them.
+The gun and shooting remain active. Ammo stays in its original position.
+
+See [complete installer help](https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.1-alpha.23/INSTALL.md)
+for supported downloads, updates, rollback, removal and troubleshooting. The setup
+EXE is unsigned; its release includes checksums. Game files and an HD texture pack
+are not included.
+
+The development candidate on this branch is **probe 23**, adding a left-Y toggle
+for both headset aiming markers. It also hides the observed
+unused player-two join/credit footer in the headset while keeping ammo in place.
+It retains probe 20's near-screen shot-flash correction and probe 19's
+adjustable vibration and cancellation requests on focus/tracking loss. The
+maintainer reported a successful version-23 headset play-test. Installer setup
+on fresh community PCs and broader campaign/hardware coverage remain pending.
 
 ## Features
 
@@ -31,12 +61,12 @@ the original timing. Independent high-rate rendering is future work.
 ## Requirements
 
 - Windows x64 with a Direct3D 11-capable GPU. The game and mod are **32-bit x86**.
-- Your own installed copy of the original PC game and its required media. The
+- Your own original PC game disc-image ZIP/IMG/ISO or installed copy and media. The
   tested `Hod2.exe` SHA-256 is
   `c6b4116788b7f68c56860fb9cc8a94bf984e620907031e4bc3db43623dbe579a`.
   Other executable revisions, the modern remake and emulated console versions
   have not been validated; executable-specific hooks may not work on them.
-- Visual Studio 2022 or newer / Build Tools with **Desktop development with C++**,
+- For source builds only: Visual Studio 2022 or newer / Build Tools with **Desktop development with C++**,
   MSVC x86/x64 tools and a Windows SDK. The build auto-discovers the installation.
 - An OpenXR runtime supporting **32-bit applications** and a connected headset.
   Quest 3 through Virtual Desktop / VirtualDesktopXR is the tested development
@@ -47,12 +77,16 @@ the original timing. Independent high-rate rendering is future work.
 
 ## Build and set up
 
+Most players should use the [installer](https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.1-alpha.23/INSTALL.md). The commands below are for
+developers who want to compile the mod themselves.
+
 Run these commands from the repository root. `-ExecutionPolicy Bypass` applies to
 that PowerShell process; it does not change the system execution policy.
 
 ```powershell
 git clone https://github.com/Icedomega13/HouseOfTheDead2VROG.git
 cd HouseOfTheDead2VROG
+git checkout v0.2.1-alpha.23
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\pcvr\prepare-deps.ps1
 .\pcvr\build.cmd
 if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
@@ -100,12 +134,13 @@ no available headset, reconnect it and restart the game.
 |---|---|
 | Right controller | Aim the pistol |
 | Right trigger | Fire |
-| B | Reload; also retains the game's deliberate cutscene-skip behavior |
+| Right B | Reload; also retains the game's deliberate cutscene-skip behavior |
 | Lower the barrel | Automatic reload when armed and outside detected cinematics |
-| A | Start / confirm; another press may be needed after the title transition |
+| Right A | Start / confirm; another press may be needed after the title transition |
 | Left stick directions | Menu navigation |
 | Left stick click | Recenter while facing your intended forward direction |
-| X | Escape / back |
+| Left X | Escape / back |
+| Left Y | Hide / restore both headset aiming markers; gun-only aiming |
 
 Aim-down reload uses the calibrated barrel: at least 55 degrees down for 80 ms
 sends a 120 ms native pulse, with a 500 ms cooldown. Raise above 35 degrees down
@@ -119,6 +154,30 @@ Positive gun pitch lowers the barrel and shooting ray. If performance suffers,
 try an eye size of 1000 or 800 and lower AA. `AimDownReload`, `Haptics`,
 `SuppressLetterbox` and `HeadsetVisibility` are switches. Explicit parameters to
 `run-probe.ps1` override the profile. This does not enable a frame-rate unlock.
+
+Probe 21 adds `HideUnusedPlayerTwo` (boolean, default true) for the English
+player-two join/credit footer. Set it to false to restore that headset display.
+Title/start and other messages retain their native paths; ammo is unchanged.
+Unrecognized/modified prompt graphics remain visible. Broader campaign and
+physical headset coverage remain pending.
+
+Probe 22 corrects the credit count that still flashed in version 21: the known
+five is matched directly in its native counter slots, and other stable count
+glyphs are remembered after a recognized credit row authenticates them. They
+stay hidden when the label blinks off. The shared font remains native elsewhere.
+
+In probe 23, press **left Y** to toggle the green aiming dot and native red
+crosshair without hiding the gun or changing aiming/shooting. X remains Back;
+right A/B remain Start/Reload. The toggle lasts for this session and survives
+focus loss. `AimingCursor` (boolean, default true) controls starting visibility.
+No menu is required. The maintainer reported that the version-23 play-test went
+well; community controller/runtime coverage is still needed.
+
+`HapticStrength` is an integer percentage from 0 to
+200: 100 preserves the existing pulse feel, 50 halves amplitude, 200 doubles it
+and 0 is silent. Trigger/reload pulses acknowledge input; they do not yet detect
+actual native shots, ammo refill, hits or damage. Strength and focus-loss behavior
+need broader physical testing across community hardware.
 
 ## Texture packs
 
@@ -170,9 +229,11 @@ proprietary and must be supplied separately. Game files, disc images, captures,
 third-party DLLs and private HD artwork are excluded. This repository contains
 only the original-PC mod; the separate native Quest project is not included.
 
-## Future releases
+## Development and future releases
 
-A later GitHub release is planned to provide an easy Windows installer. Players
-will select their separately obtained game files, with optional links to help
-find them; the installer will contain only the mod and permitted dependencies.
-See [the installer roadmap](ROADMAP.md). The current alpha is source-only.
+The community installer is available now. The accepted single-gun build remains
+the public playable baseline. A separate dual-wield prototype is being explored:
+two controller-aimed guns sharing one player's health and, initially, native ammo.
+Dual wielding is **not included in the current installer**. Independent magazines,
+reliable overlapping shots and broader campaign/hardware coverage remain work
+for later previews. See [the release roadmap](ROADMAP.md).
