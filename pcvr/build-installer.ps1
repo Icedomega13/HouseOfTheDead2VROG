@@ -31,7 +31,7 @@ foreach($file in $files.GetEnumerator()){
 }
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $payload 'package.json') -Encoding utf8
 # Assemble only the explicit authored mod files. Never enumerate a staged game.
-Add-Type -AssemblyName System.IO.Compression.FileSystem
+Add-Type -AssemblyName System.IO.Compression,System.IO.Compression.FileSystem
 $zip=Join-Path $output 'payload.zip'
 $archive=[IO.Compression.ZipFile]::Open($zip,[IO.Compression.ZipArchiveMode]::Create)
 try{foreach($relative in @($files.Keys)+@('package.json')){[IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,(Join-Path $payload $relative),$relative,[IO.Compression.CompressionLevel]::Optimal)|Out-Null}}finally{$archive.Dispose()}

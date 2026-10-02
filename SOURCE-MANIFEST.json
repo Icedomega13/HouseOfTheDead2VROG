@@ -269,7 +269,7 @@
     },
     {
       "path": "pcvr/build-installer.ps1",
-      "sha256": "6dc5bb1119ff86387d192a8718679b76f3f8fda8dc23f29fe036a50d627ec691"
+      "sha256": "9fa2e4813d58b1984fc15854ff0997a68137eb989165eb020502e2eb8825b33b"
     },
     {
       "path": "pcvr/test-installer.ps1",
