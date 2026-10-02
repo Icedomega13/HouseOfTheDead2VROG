@@ -70,3 +70,15 @@ static bool hide_player_two_draw(IDirect3DDevice7* device,DWORD fvf,const void* 
     if(hide){static unsigned reports=0;if(reports++<6) log_line("VR_HUD unused player-two footer suppressed in eye atlas; desktop preserved");}
     return hide;
 }
+static bool hide_aim_cursor_draw(IDirect3DDevice7* device,DWORD fvf,const void* vertices,DWORD count,const D3DVIEWPORT7& viewport) {
+    if(xr_aim_cursor_visible()||fvf!=0x1c4||viewport.dwX||viewport.dwY||viewport.dwWidth!=640||viewport.dwHeight!=480) return false;
+    if(!hotd2_hud::aim_cursor_quad(vertices,count)) return false;
+    IDirectDrawSurface7* texture=nullptr;
+    if(FAILED(device->GetTexture(0,&texture))||!texture) return false;
+    DDSURFACEDESC2 desc={};desc.dwSize=sizeof(desc);
+    bool hidden=SUCCEEDED(texture->GetSurfaceDesc(&desc))&&desc.dwWidth==32&&desc.dwHeight==32&&
+        prompt_texture_identity(texture,desc)==hotd2_hud::Text::AimCursor;
+    texture->Release();
+    if(hidden){static unsigned reports=0;if(reports++<3)log_line("VR_AIM_CURSOR native crosshair suppressed in eyes; desktop and shooting preserved");}
+    return hidden;
+}

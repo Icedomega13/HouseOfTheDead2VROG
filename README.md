@@ -13,7 +13,8 @@ alpha: build instructions are below. Version 17 received positive headset
 feedback; version 18 adds locally tested gun rendering and cutscene reload fixes
 and still needs physical feedback. See [changes and known issues](CHANGELOG.md).
 
-The development candidate on this branch is **probe 22**, hiding the observed
+The development candidate on this branch is **probe 23**, adding a left-Y toggle
+for both headset aiming markers. It also hides the observed
 unused player-two join/credit footer in the headset while keeping ammo in place.
 It retains probe 20's near-screen shot-flash correction and probe 19's
 adjustable vibration and cancellation requests on focus/tracking loss. Physical
@@ -112,6 +113,7 @@ no available headset, reconnect it and restart the game.
 | Left stick directions | Menu navigation |
 | Left stick click | Recenter while facing your intended forward direction |
 | X | Escape / back |
+| Y (left) | Toggle headset aiming dot and red crosshair (probe 23) |
 
 Aim-down reload uses the calibrated barrel: at least 55 degrees down for 80 ms
 sends a 120 ms native pulse, with a 500 ms cooldown. Raise above 35 degrees down
@@ -136,6 +138,12 @@ Probe 22 corrects the credit count that still flashed in version 21: the known
 five is matched directly in its native counter slots, and other stable count
 glyphs are remembered after a recognized credit row authenticates them. They
 stay hidden when the label blinks off. The shared font remains native elsewhere.
+
+In probe 23, press **left Y** to toggle the green aiming dot and native red
+crosshair without hiding the gun or changing aiming/shooting. X remains Back;
+right A/B remain Start/Reload. The toggle lasts for this session and survives
+focus loss. `AimingCursor` (boolean, default true) controls starting visibility.
+No menu is required. Physical button/aiming verification remains pending.
 
 In the probe 19 candidate, `HapticStrength` is an integer percentage from 0 to
 200: 100 preserves the existing pulse feel, 50 halves amplitude, 200 doubles it

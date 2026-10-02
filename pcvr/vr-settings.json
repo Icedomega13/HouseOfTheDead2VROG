@@ -10,5 +10,6 @@
   "AnisotropicFiltering": 8,
   "SuppressLetterbox": true,
   "HeadsetVisibility": true,
-  "HideUnusedPlayerTwo": true
+  "HideUnusedPlayerTwo": true,
+  "AimingCursor": true
 }

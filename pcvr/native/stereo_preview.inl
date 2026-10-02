@@ -47,13 +47,15 @@ static void configure_stereo() {
     bool down_reload=GetPrivateProfileIntW(L"OpenXR",L"AimDownReload",1,path)!=0;
     UINT down_degrees=GetPrivateProfileIntW(L"OpenXR",L"DownReloadDegrees",55,path);
     down_degrees=std::clamp(down_degrees,35u,85u);
-    configure_xr(xr,static_cast<float>(units),eye_size,log_line,gun_pitch,haptics,down_reload,static_cast<float>(down_degrees),haptic_percent/100.0f);
+    bool aiming_cursor=GetPrivateProfileIntW(L"OpenXR",L"AimingCursor",1,path)!=0;
+    configure_xr(xr,static_cast<float>(units),eye_size,log_line,gun_pitch,haptics,down_reload,static_cast<float>(down_degrees),haptic_percent/100.0f,aiming_cursor);
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
     overlay_audit=GetPrivateProfileIntW(L"OpenXR",L"ReplayOverlayAudit",0,path)!=0;
     int replay_yaw=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"ReplayYawDegrees",0,path));
     bool passive=GetPrivateProfileIntW(L"OpenXR",L"ReplayPassive",0,path)!=0;
     bool combat=GetPrivateProfileIntW(L"OpenXR",L"ReplayCombat",0,path)!=0;
-    configure_xr_replay(static_cast<float>(replay_yaw),passive,combat);
+    bool cursor_toggle=GetPrivateProfileIntW(L"OpenXR",L"ReplayCursorToggle",0,path)!=0;
+    configure_xr_replay(static_cast<float>(replay_yaw),passive,combat,cursor_toggle);
     log_line("REPLAY_TEST yaw_degrees=%d passive=%d",replay_yaw,passive);
 #endif
     log_line("VR_CALIBRATION units_per_metre=%u gun_pitch_down_degrees=%.4g",units,gun_pitch);
@@ -218,6 +220,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
         // Preserve the original desktop image for game input and diagnostics.
         result=draw(vertices);
         if(xr_frame_ready()&&hide_player_two_draw(device,fvf,vertices,count,viewport,static_cast<uint32_t>(presentation_count))) return result;
+        if(xr_frame_ready()&&hide_aim_cursor_draw(device,fvf,vertices,count,viewport)) return result;
         if(letterbox) {
             static unsigned reports=0;if(reports++<4) log_line("VR_LETTERBOX native bar preserved on desktop, suppressed in eye atlas");
             return result;

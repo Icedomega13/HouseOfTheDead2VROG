@@ -26,7 +26,7 @@ if(Test-Path -LiteralPath $log) {
     for($i=0;$i -lt $lines.Count;$i++) {if($lines[$i] -match 'probe_version=') {$begin=$i}}
     # Get-Content strings carry PowerShell provider metadata. Copy their text
     # before JSON serialization so a line does not expand into a provider object.
-    $diagnostics=@($lines | Select-Object -Skip $begin | Where-Object {$_ -match 'probe_version=|VR_CALIBRATION|VR_RELOAD|aim_down_reload|XR session created|XR recentered|XR eye_transfer|XR failure|XR frame lifecycle stopped|XR haptics|XR submitted_frame=|SCREEN_PLANE|RENDER_STATE|STEREO restore error|VR_LETTERBOX|NATIVE_CULL|VR_CULL|TIMING_RESEARCH|TEXTURE_PACK|TEXTURE_DUMP|OVERLAY_AUDIT|RHW_AUDIT|XYZ_QUAD_AUDIT|EFFECT_AUDIT|VR_HUD|VR_SCREEN_EFFECT|VR_PISTOL'} | ForEach-Object {$_.ToString()})
+    $diagnostics=@($lines | Select-Object -Skip $begin | Where-Object {$_ -match 'probe_version=|VR_CALIBRATION|VR_RELOAD|aim_down_reload|XR session created|XR recentered|XR eye_transfer|XR failure|XR frame lifecycle stopped|XR haptics|XR submitted_frame=|SCREEN_PLANE|RENDER_STATE|STEREO restore error|VR_LETTERBOX|NATIVE_CULL|VR_CULL|TIMING_RESEARCH|TEXTURE_PACK|TEXTURE_DUMP|OVERLAY_AUDIT|RHW_AUDIT|XYZ_QUAD_AUDIT|EFFECT_AUDIT|VR_HUD|VR_AIM_CURSOR|VR_SCREEN_EFFECT|VR_PISTOL'} | ForEach-Object {$_.ToString()})
 }
 [ordered]@{
     mode=$Mode; started_at=$StartedAt.ToString('o'); finished_at=(Get-Date).ToString('o'); game_exit_code=$GameExitCode;

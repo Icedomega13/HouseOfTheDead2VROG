@@ -166,7 +166,7 @@ static void draw_controller_aid(IDirect3DDevice7* device) {
         device->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_DIFFUSE);device->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,FALSE);
         for(unsigned eye=0;eye<2;++eye) {
             D3DVIEWPORT7 v={eye*xr_eye_size(),0,xr_eye_size(),xr_eye_size(),0,1};device->SetViewport(&v);
-            float x=0,y=0;if(!xr_pointer_vertex(eye,x,y)||x<0||x>1||y<0||y>1) continue;
+            float x=0,y=0;if(!xr_aim_cursor_visible()||!xr_pointer_vertex(eye,x,y)||x<0||x>1||y<0||y>1) continue;
             float size=static_cast<float>(xr_eye_size());x=(x+eye)*size;y*=size;
             float radius=size*0.004f;
             Dot dot[]={{x-radius,y,0,1,0xff00ff40},{x,y-radius,0,1,0xff00ff40},{x,y+radius,0,1,0xff00ff40},{x+radius,y,0,1,0xff00ff40}};

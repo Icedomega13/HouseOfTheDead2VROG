@@ -331,5 +331,23 @@ int main() {
     require(bridge.enabled&&bridge.frame_open&&!bridge.input.active,"success-qualified discarded begin remains a valid open frame");
     submit_xr_frame(nullptr);require(end_count==5&&!bridge.frame_open&&bridge.enabled,"non-rendering discarded frame closes normally without disabling VR");
     require(frame_check(XR_SESSION_LOSS_PENDING,"test success")&&bridge.enabled,"success-qualified lifecycle result remains supported");
+    configure_xr(true,10,800,nullptr,0);
+    require(xr_aim_cursor_visible(),"cursor visible by default");
+    update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"left Y first press hides cursor");
+    update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"holding Y cannot repeat toggle");
+    bridge.frame_open=bridge.valid_pose=bridge.recentered=bridge.aim_valid=bridge.input.active=true;
+    bridge.input.fire=true;bridge.aim_pose={};bridge.aim_pose.orientation.w=1;bridge.origin={};bridge.origin.orientation.w=1;
+    float cursor_x=0,cursor_y=0;require(!xr_pointer_vertex(0,cursor_x,cursor_y),"hidden cursor produces no dot vertex");
+    require(xr_game_input().aim_valid&&xr_game_input().fire,"cursor hidden preserves aiming and firing");
+    clear_controls();require(!xr_aim_cursor_visible(),"focus loss retains visibility preference");
+    update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"held Y after refocus cannot toggle");
+    update_cursor_toggle(true,false);update_cursor_toggle(true,true);
+    require(xr_aim_cursor_visible(),"release and fresh press restores cursor");
+    update_cursor_toggle(false,true);update_cursor_toggle(true,true);
+    require(xr_aim_cursor_visible(),"inactive or failed action cannot create an edge on return");
+    update_cursor_toggle(true,false);update_cursor_toggle(true,true);require(!xr_aim_cursor_visible(),"next intentional press toggles once");
+    configure_xr(true,10,800,nullptr,0,true,true,55,1,false);
+    require(!xr_aim_cursor_visible(),"cursor-off profile applied at launch");
+    update_cursor_toggle(true,true);require(xr_aim_cursor_visible(),"cursor-off profile can toggle back on");
     printf("PASS %u production XR bridge checks (synthetic poses)\n",checks);return 0;
 }

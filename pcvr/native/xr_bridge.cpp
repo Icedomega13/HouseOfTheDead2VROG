@@ -24,6 +24,7 @@ struct Bridge {
     float units=10,gun_pitch=0;
     unsigned eye_size=800;
     bool focused=false,recenter_request=false,aim_valid=false;
+    bool cursor_visible=true,cursor_toggle_held=false,cursor_toggle_armed=true;
     bool trigger_down=false,feedback_fire=false,feedback_reload=false,haptics=true,haptics_failed=false;
     bool haptic_pulse_pending=false;
     float haptic_scale=1;
@@ -36,6 +37,7 @@ struct Bridge {
     XrActionSet actions=XR_NULL_HANDLE;
     XrAction recenter=XR_NULL_HANDLE,aim=XR_NULL_HANDLE,fire=XR_NULL_HANDLE,reload=XR_NULL_HANDLE,start=XR_NULL_HANDLE,back=XR_NULL_HANDLE,menu=XR_NULL_HANDLE;
     XrAction vibration=XR_NULL_HANDLE;
+    XrAction cursor_toggle=XR_NULL_HANDLE;
     XrPosef aim_pose={};
     D3DMATRIX game_projection={};
     XrGameInput input;
@@ -73,6 +75,16 @@ void clear_controls() {
     stop_controller_feedback();
     bridge.input={};bridge.aim_valid=false;bridge.trigger_down=false;
     bridge.feedback_fire=bridge.feedback_reload=false;bridge.reload_gesture.reset();
+    bridge.cursor_toggle_held=false;bridge.cursor_toggle_armed=false;
+}
+void update_cursor_toggle(bool active,bool down) {
+    if(!active){bridge.cursor_toggle_held=false;bridge.cursor_toggle_armed=false;return;}
+    if(!down){bridge.cursor_toggle_held=false;bridge.cursor_toggle_armed=true;return;}
+    if(bridge.cursor_toggle_armed&&!bridge.cursor_toggle_held) {
+        bridge.cursor_visible=!bridge.cursor_visible;
+        if(bridge.log) bridge.log("VR_AIM_CURSOR visible=%d toggle=left_Y",bridge.cursor_visible);
+    }
+    bridge.cursor_toggle_held=true;
 }
 static DirectX::XMMATRIX calibrated_aim(float units) {
     // Positive pitch lowers +Z-forward about the controller's local X axis.
@@ -123,6 +135,7 @@ bool initialize_actions() {
         {"reload","Reload",XR_ACTION_TYPE_BOOLEAN_INPUT,"/user/hand/right/input/b/click",&bridge.reload},
         {"start","Start or confirm",XR_ACTION_TYPE_BOOLEAN_INPUT,"/user/hand/right/input/a/click",&bridge.start},
         {"back","Back",XR_ACTION_TYPE_BOOLEAN_INPUT,"/user/hand/left/input/x/click",&bridge.back},
+        {"cursor_toggle","Toggle aiming cursor",XR_ACTION_TYPE_BOOLEAN_INPUT,"/user/hand/left/input/y/click",&bridge.cursor_toggle},
         {"menu_move","Menu navigation",XR_ACTION_TYPE_VECTOR2F_INPUT,"/user/hand/left/input/thumbstick",&bridge.menu},
         {"feedback","Controller feedback",XR_ACTION_TYPE_VIBRATION_OUTPUT,"/user/hand/right/output/haptic",&bridge.vibration}};
     std::vector<XrActionSuggestedBinding> suggestions;
@@ -155,6 +168,10 @@ void sync_input() {
     XrActionsSyncInfo sync={XR_TYPE_ACTIONS_SYNC_INFO};sync.countActiveActionSets=1;sync.activeActionSets=&active;
     if(xrSyncActions(bridge.session,&sync)!=XR_SUCCESS) {clear_controls();return;}
     bridge.input.active=true;
+    XrActionStateGetInfo cursor_get={XR_TYPE_ACTION_STATE_GET_INFO};cursor_get.action=bridge.cursor_toggle;
+    XrActionStateBoolean cursor_state={XR_TYPE_ACTION_STATE_BOOLEAN};
+    auto cursor_result=xrGetActionStateBoolean(bridge.session,&cursor_get,&cursor_state);
+    update_cursor_toggle(cursor_result==XR_SUCCESS&&cursor_state.isActive,cursor_state.currentState!=XR_FALSE);
     bridge.recenter_request|=button(bridge.recenter,true);
     bridge.input.reload=button(bridge.reload);bridge.input.start=button(bridge.start);bridge.input.back=button(bridge.back);
     XrActionStateGetInfo get={XR_TYPE_ACTION_STATE_GET_INFO};get.action=bridge.fire;
@@ -352,9 +369,11 @@ bool upload_eyes(IDirect3DDevice7* device,IDirectDrawSurface7* atlas) {
 }
 }
 
-void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees,bool haptics,bool aim_down_reload,float down_reload_degrees,float haptic_scale) {
+void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog log,float gun_pitch_degrees,bool haptics,bool aim_down_reload,float down_reload_degrees,float haptic_scale,bool aiming_cursor) {
     bridge.enabled=enabled;bridge.units=units_per_metre;bridge.eye_size=eye_size;bridge.log=log;
     bridge.gun_pitch=std::clamp(gun_pitch_degrees,-45.0f,45.0f)*DirectX::XM_PI/180;
+    bridge.cursor_visible=aiming_cursor;bridge.cursor_toggle_held=false;bridge.cursor_toggle_armed=true;
+    if(log) log("VR_AIM_CURSOR visible=%d binding=left_Y session_toggle=1",aiming_cursor);
     bridge.haptics=haptics;
     bridge.haptic_scale=std::isfinite(haptic_scale)?std::clamp(haptic_scale,0.0f,2.0f):1.0f;
     if(!enabled||!haptics||bridge.haptic_scale==0) stop_controller_feedback();
@@ -368,9 +387,11 @@ void configure_xr(bool enabled,float units_per_metre,unsigned eye_size,ProbeLog 
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
 static float replay_yaw=0;
 static bool replay_passive=false,replay_combat=false;
-void configure_xr_replay(float yaw_degrees,bool passive,bool combat) {
+static bool replay_cursor_toggle=false;
+void configure_xr_replay(float yaw_degrees,bool passive,bool combat,bool cursor_toggle) {
     replay_yaw=std::clamp(yaw_degrees,-180.0f,180.0f)*DirectX::XM_PI/180;
     replay_passive=passive;replay_combat=combat;
+    replay_cursor_toggle=cursor_toggle;
 }
 #endif
 void begin_xr_frame() {
@@ -389,6 +410,7 @@ void begin_xr_frame() {
         bridge.views[i].fov={-.75f,.75f,.75f,-.75f};
     }
     bridge.input={};bridge.input.active=true;bridge.aim_valid=true;
+    if(replay_cursor_toggle) update_cursor_toggle(true,(frame>=1440&&frame<1450)||(frame>=2400&&frame<2410)||(frame>=2700&&frame<2710));
     bridge.aim_pose={};bridge.aim_pose.orientation.w=1;bridge.aim_pose.position={.1f,-.15f,-.3f};
     bridge.input.start=!replay_passive&&((frame>=900&&frame<905)||(frame>=1020&&frame<1025)||(frame>=1140&&frame<1145));
     bridge.input.fire=!replay_passive&&frame>=720&&frame%30<3;
@@ -485,6 +507,7 @@ void submit_xr_frame(IDirect3DDevice7* device,IDirectDrawSurface7* atlas) {
 }
 unsigned xr_eye_size() {return bridge.eye_size;}
 bool xr_frame_ready() {return bridge.frame_open&&bridge.valid_pose&&bridge.recentered;}
+bool xr_aim_cursor_visible() {return bridge.cursor_visible;}
 void xr_set_game_projection(const D3DMATRIX& projection) {bridge.game_projection=projection;}
 void xr_set_cinematic_guard(bool cinematic) {
     if(cinematic&&!bridge.cinematic_guard&&bridge.log) bridge.log("VR_RELOAD cinematic_guard=1 gesture_cancelled=1 B_preserved=1");
@@ -527,6 +550,7 @@ bool xr_hud_vertex(unsigned eye,float x,float y,const D3DVIEWPORT7& source,const
     return project_eye(eye,point,out_x,out_y);
 }
 bool xr_pointer_vertex(unsigned eye,float& x,float& y) {
+    if(!bridge.cursor_visible) return false;
     DirectX::XMFLOAT3 hit;
     if(!aim_hit(hit)) return false;
     // Match the native crosshair's two-metre HUD plane. The original game still

@@ -11,6 +11,9 @@
 #include <vector>
 #include "texture_images.h"
 #include "hud_prompt.h"
+#include "xr_bridge.h"
+bool xr_aim_cursor_visible(){return true;}
+XrGameInput xr_game_input(){return {};}
 static unsigned checks=0;
 static void require(bool ok,const char* name){++checks;if(!ok){fprintf(stderr,"FAIL %s\n",name);exit(1);}}
 static void log_line(const char*,...){}
@@ -46,6 +49,7 @@ static void quad(Vertex* p,float left,float top,float right,float bottom){
 }
 int main(){
     FakeSurface source;FakeDevice device{&source};D3DVIEWPORT7 viewport={0,0,640,480,0,1};Vertex p[4];
+    require(!hide_aim_cursor_draw(&device,0x1c4,p,0,viewport)&&device.gets==0,"visible cursor bypasses texture inspection");
     quad(p,518,427,531.6f,454.2f);
     require(!hide_player_two_draw(&device,0x1c4,p,4,viewport,1),"unknown first count stays native");
     require(source.locks==1&&source.unique==3,"read-only backend unlock cached after uniqueness increment");

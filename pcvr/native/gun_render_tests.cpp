@@ -20,7 +20,9 @@ static float yaw=0,pitch=0,roll=0;
 unsigned xr_eye_size(){return 400;}
 bool xr_frame_ready(){return true;}
 XrGameInput xr_game_input(){XrGameInput out;out.active=out.aim_valid=true;return out;}
-bool xr_pointer_vertex(unsigned,float&,float&){return false;}
+static bool cursor_visible=false;
+bool xr_aim_cursor_visible(){return cursor_visible;}
+bool xr_pointer_vertex(unsigned,float& x,float& y){x=.9f;y=.1f;return true;}
 bool xr_gun_matrices(unsigned eye,D3DMATRIX& view,D3DMATRIX& projection){
     using namespace DirectX;XMFLOAT4X4 m;
     XMStoreFloat4x4(&m,XMMatrixTranslation(0,.035f,-.06f)*XMMatrixRotationRollPitchYaw(pitch,yaw,roll)*XMMatrixTranslation(eye==0?.003f:-.003f,0,.5f));
@@ -137,6 +139,18 @@ int wmain(int argc,wchar_t** argv){
         printf("GPU angles pitch=%.3f yaw=%.3f roll=%.3f opaque=%u nearest_face_samples=%u mismatches=%u\n",pitch,yaw,roll,opaque,compared,mismatches);
         require(opaque>30&&compared>20,"solid pistol visible from both eyes at this angle");
         require(mismatches==0,"actual GPU faces agree with closest surface, without see-through parts");
+    }
+    for(bool shown:{false,true}){
+        cursor_visible=shown;require(SUCCEEDED(device->BeginScene()),"begin cursor visibility GPU scene");
+        {SavedGameState saved(device,false,log_line,"test_cursor_clear");require(saved.bind(eye_atlas),"bind cursor test atlas");
+         require(SUCCEEDED(device->Clear(0,nullptr,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xff123456,1,0)),"clear cursor test atlas");}
+        draw_controller_aid(device);require(SUCCEEDED(device->EndScene()),"end cursor visibility GPU scene");
+        auto atlas=pixels(eye_atlas),layer=pixels(gun_layer);unsigned green=0,solid=0;
+        for(unsigned eye=0;eye<2;++eye)for(unsigned y=35;y<46;++y)for(unsigned x=355;x<366;++x)
+            if((atlas[y*800+eye*400+x]&0xffffff)==0x00ff40)++green;
+        for(auto pixel:layer)if((pixel>>24)>250)++solid;
+        require(shown?green>0:green==0,"actual GPU dot respects cursor visibility");
+        require(solid>30,"gun remains visible in both cursor modes");
     }
     gun_layer->Release();eye_atlas->Release();device->Release();d3d->Release();desktop->Release();draw->Release();DestroyWindow(window);FreeLibrary(module);
     printf("PASS %u actual GPU gun render checks\n",checks);return 0;

@@ -72,5 +72,19 @@ int main() {
     require(!fresh.hide(p,4,16,32,digit),"same glyph on different row preserved");
     quad(p,518,427,531.6f,454.2f);
     require(!fresh.hide(p,4,32,32,digit),"same-sized ammo quad cannot become credit digit");
+    auto cursor=text_identity("573332fb46858a9e9eb6976cc0c88d2a022c58525692f6bd9a76d2d34f9e7405");
+    require(cursor==Text::AimCursor,"observed red crosshair identity");
+    quad(p,391,174,423,206);for(auto& vertex:p){vertex.z=.20002f;vertex.rhw=1;}
+    require(aim_cursor_quad(p,4),"captured native cursor geometry recognized");
+    for(auto& vertex:p)vertex.x+=90;
+    require(aim_cursor_quad(p,4),"cursor geometry does not depend on live or stale aiming coordinates");
+    require(!aim_cursor_quad(p,3),"non-quad remains native");
+    p[0].x=NAN;require(!aim_cursor_quad(p,4),"invalid cursor coordinates remain native");
+    quad(p,391,174,423,206);for(auto& vertex:p){vertex.z=.20002f;vertex.rhw=1;}
+    p[0].u=.5f;require(!aim_cursor_quad(p,4),"partial sprite UVs remain native");
+    quad(p,391,174,423,206);for(auto& vertex:p){vertex.z=.20002f;vertex.rhw=1;}p[3]=p[2];
+    require(!aim_cursor_quad(p,4),"duplicate cursor corners rejected");
+    quad(p,391,174,423,206);for(auto& vertex:p){vertex.z=.20002f;vertex.rhw=1;}p[0].z=.3f;
+    require(!aim_cursor_quad(p,4),"other depth sprite remains native");
     printf("PASS %u native HUD prompt checks\n",checks);return 0;
 }

@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased — probe version 22 candidate
+## Unreleased — probe version 23 candidate
+
+- Left Y toggles the green aiming dot and observed native red crosshair in the
+  headset. Gun, shooting, desktop output and ammo placement stay unchanged.
+- One change per press, with release required after inactive/failed input;
+  preserve session visibility through focus loss. Existing X/A/B bindings remain.
+- `AimingCursor` boolean defaults to true and controls launch preference; the
+  runtime toggle stays in memory for the session.
+- 857 local checks passed, including actual GPU gun/dot visibility comparisons.
+  Native replay uses the same toggle helper; physical Y binding/feel pending.
+
+### Version 22 changes retained
 
 - Fix the credit value that still flashed in version 21's physical test. Match
   the captured five directly in the native credit slots; cache other stable

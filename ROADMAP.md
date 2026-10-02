@@ -41,6 +41,8 @@ Unknown graphics remain native. Test menus, continue/death and cinematics in
 the headset; active second-player and full-route coverage remain unverified.
 Probe 22 recognizes the known five independently and caches other authenticated
 count glyphs so label blink gaps cannot expose them. Physical retesting is pending.
+Probe 23 adds a left-Y cursor visibility toggle for gun-only aiming, without
+moving ammo or changing shot coordinates. Physical button/feel verification pending.
 
 ## Easy Windows installer — planned for a later GitHub release
 

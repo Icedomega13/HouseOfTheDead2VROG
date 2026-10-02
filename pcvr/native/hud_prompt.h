@@ -8,12 +8,13 @@ namespace hotd2_hud {
 struct Vertex {float x,y,z,rhw;uint32_t diffuse,specular;float u,v;};
 static_assert(sizeof(Vertex)==32,"Observed native RHW stride");
 struct Bounds {float left=0,right=0,top=0,bottom=0,z=0,rhw=0;};
-enum class Text {Other,Join,Credits,CreditDigit};
+enum class Text {Other,Join,Credits,CreditDigit,AimCursor};
 inline Text text_identity(const char* key) {
     if(!key) return Text::Other;
     if(!std::strcmp(key,"3666b222f8a0a64b862c4597e5ba4f8300ba3e283bcc6616eebdbee9d30589a2")) return Text::Join;
     if(!std::strcmp(key,"e2ee80a79481fe8dea2918bb29044f975a434f8b2edd93d11c550eede02c43e8")) return Text::Credits;
     if(!std::strcmp(key,"2c3169048b14d83c03789820105940798e1096be9f7d709476ad643eaa5e6f41")) return Text::CreditDigit;
+    if(!std::strcmp(key,"573332fb46858a9e9eb6976cc0c88d2a022c58525692f6bd9a76d2d34f9e7405")) return Text::AimCursor;
     return Text::Other;
 }
 inline bool footer_quad(const void* data,unsigned count,Bounds& out) {
@@ -47,6 +48,23 @@ inline bool credit_count_slot(const Bounds& b,unsigned width,unsigned height) {
         (std::fabs(b.left-518)<.5f||std::fabs(b.left-531.6f)<.5f)&&
         std::fabs(b.right-b.left-13.6f)<.5f&&
         std::fabs(b.top-427)<.5f&&std::fabs(b.bottom-454.2f)<.5f;
+}
+inline bool aim_cursor_quad(const void* data,unsigned count) {
+    if(!data||count!=4) return false;
+    auto p=static_cast<const Vertex*>(data);unsigned corners=0;float left=0,top=0;
+    for(unsigned i=0;i<4;++i) {
+        if(!std::isfinite(p[i].x)||!std::isfinite(p[i].y)||!std::isfinite(p[i].z)||!std::isfinite(p[i].rhw)||
+            !std::isfinite(p[i].u)||!std::isfinite(p[i].v)||std::fabs(p[i].z-.20002f)>.0002f||std::fabs(p[i].rhw-1)>.0002f) return false;
+        bool right=std::fabs(p[i].u-1)<.0001f,upper=std::fabs(p[i].v-1)<.0001f;
+        if((!right&&std::fabs(p[i].u)>.0001f)||(!upper&&std::fabs(p[i].v)>.0001f)) return false;
+        float x=p[i].x-(right?32.0f:0),y=p[i].y-(upper?0:32.0f);
+        if(i==0){left=x;top=y;}
+        if(std::fabs(x-left)>.1f||std::fabs(y-top)>.1f) return false;
+        corners|=1u<<((right?1u:0u)+(upper?2u:0u));
+    }
+    // Content identity distinguishes the cursor from other sprites. Do not
+    // require this draw to match live aim: native coordinates can lag input.
+    return corners==15;
 }
 class PromptFilter {
     uint32_t frame=0,credits_frame=0;bool frame_valid=false,credits_valid=false;Bounds credits={};
