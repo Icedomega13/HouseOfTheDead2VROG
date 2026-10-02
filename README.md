@@ -8,11 +8,13 @@ logic and intercepts DirectDraw / Direct3D 7 rendering to produce tracked stereo
 views and controller input. It is a PCVR mod, not a standalone Quest application
 or a rebuild of the game's proprietary source.
 
-**Community installer alpha: v0.2.0-alpha.23 (probe 23).** Download the
-[Windows setup EXE](https://github.com/Icedomega13/HouseOfTheDead2VROG/releases/tag/v0.2.0-alpha.23)
-and follow [installation help](INSTALL.md). Select your own installed original PC
-game; setup copies it separately, downloads verified dependencies and creates a
-launcher. No game files or private HD sample are included. No compiler is needed.
+**Community installer alpha: v0.2.1-alpha.23 (probe 23).** Download the
+[Windows setup EXE](https://github.com/Icedomega13/HouseOfTheDead2VROG/releases/tag/v0.2.1-alpha.23)
+and follow [installation help](INSTALL.md). Select the Windows PC disc-image ZIP
+you downloaded; setup prepares your VR game copy and disc automatically. No unzip
+or original flatscreen installation is needed. IMG/ISO and existing game folders
+also work. Setup downloads verified dependencies and creates a launcher. No game
+files or private HD sample are included. No compiler is needed.
 The earlier source-only `v0.1.0-alpha.18` remains available as a separate tag.
 
 The development candidate on this branch is **probe 23**, adding a left-Y toggle
@@ -41,7 +43,7 @@ the original timing. Independent high-rate rendering is future work.
 ## Requirements
 
 - Windows x64 with a Direct3D 11-capable GPU. The game and mod are **32-bit x86**.
-- Your own installed copy of the original PC game and its required media. The
+- Your own original PC game disc-image ZIP/IMG/ISO or installed copy and media. The
   tested `Hod2.exe` SHA-256 is
   `c6b4116788b7f68c56860fb9cc8a94bf984e620907031e4bc3db43623dbe579a`.
   Other executable revisions, the modern remake and emulated console versions

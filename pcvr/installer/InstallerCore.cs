@@ -18,13 +18,13 @@ public sealed class InstallOptions {
     public bool Shortcut = true, Register = true;
 }
 public static class InstallerCore {
-    public const string Release = "0.2.0-alpha.23";
+    public const string Release = "0.2.1-alpha.23";
     public const string GameHash = "c6b4116788b7f68c56860fb9cc8a94bf984e620907031e4bc3db43623dbe579a";
     public const string DgArchive = "dgVoodoo2_87_5.zip";
     public const string XrArchive = "openxr_loader_windows-1.1.63.zip";
     public const string DgHash = "5ffde6927f7355ca3fdd5d785b581256a8e6539fa13e395a891ade6ba1040850";
     public const string XrHash = "01c631aeabbfe0879540f77ef833416c532a20746285b494630160c23588b771";
-    public const string HelpUrl = "https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.0-alpha.23/INSTALL.md";
+    public const string HelpUrl = "https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.1-alpha.23/INSTALL.md";
     public const string GameUrl = "https://www.myabandonware.com/game/the-house-of-the-dead-2-beg";
     public static readonly string[] DataFolders = {"cam","coli","evt","mot","pol","sound","tex"};
     public static readonly string[] PayloadFiles = {"build/pcvr/ddraw.dll","pcvr/run-probe.ps1","pcvr/save-session.ps1","pcvr/graphics-quality.ps1","pcvr/vr-settings.json","LICENSE","THIRD_PARTY.md","INSTALL.md"};
@@ -54,7 +54,7 @@ public static class InstallerCore {
         folder=Full(folder);NoLinks(folder);
         var files=new List<string>();
         string exe=Under(folder,"Hod2.exe");
-        if(!File.Exists(exe)) throw new IOException("Select the installed PC game folder containing Hod2.exe. Extract downloaded files and install the original game first.");
+        if(!File.Exists(exe)) throw new IOException("Choose your downloaded ZIP or IMG/ISO directly, or an installed PC game folder containing Hod2.exe.");
         if(Hash(exe)!=expectedHash) throw new IOException("This Hod2.exe revision is not supported by this alpha. Use the original Windows PC release; console versions and the remake are incompatible. See setup help.");
         files.Add(exe);
         foreach(string name in new[]{"Hod2.ini","Config.exe"}) {string p=Under(folder,name);if(File.Exists(p))files.Add(p);}
@@ -164,13 +164,15 @@ public static class InstallerCore {
         else if(Directory.Exists(root)&&Directory.EnumerateFileSystemEntries(root).Any())throw new IOException("Choose an empty destination folder. Existing unrelated files are never overwritten.");
         string game=Under(root,"working/pcvr/game");
         if((Same(root,source)||Inside(root,source)||Inside(source,root))&&!(update&&Same(source,game)))throw new IOException("The mod destination must be separate from your original game folder.");
-        progress(2,"Checking the original game files...");var gameFiles=GameFiles(update?game:source,expectedGameHash);cancel.ThrowIfCancellationRequested();
-        long size=update?104857600:gameFiles.Sum(p=>new FileInfo(p).Length)+104857600;
+        bool import=!update&&File.Exists(source);
+        progress(2,"Checking the original game files...");var gameFiles=import?null:GameFiles(update?game:source,expectedGameHash);cancel.ThrowIfCancellationRequested();
+        long size=update?104857600:import?3221225472:gameFiles.Sum(p=>new FileInfo(p).Length)+104857600;
         if(new DriveInfo(Path.GetPathRoot(root)).AvailableFreeSpace<size)throw new IOException("Not enough free disk space for the separate game copy.");
         string parent=Path.GetDirectoryName(root);Directory.CreateDirectory(parent);
         string stage=Under(parent,".HotD2VR-stage-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(stage);
         var changed=new List<string>();string backup=null;bool committed=false;
         try {
+            if(import)DiscImport.Import(source,stage,expectedGameHash,cancel,progress);
             ExtractPayload(payload,stage);
             string dg=VerifiedDownload(options.Cache,DgArchive,"https://github.com/dege-diosg/dgVoodoo2/releases/download/v2.87.5/"+DgArchive,DgHash,cancel,progress);
             string xr=VerifiedDownload(options.Cache,XrArchive,"https://github.com/KhronosGroup/OpenXR-SDK-Source/releases/download/release-1.1.63/"+XrArchive,XrHash,cancel,progress);
@@ -183,9 +185,9 @@ public static class InstallerCore {
             Copy(Under(stage,"build/pcvr/ddraw.dll"),Under(stage,"working/pcvr/game/ddraw.dll"));
             Copy(Under(stage,"build/pcvr/openxr_loader.dll"),Under(stage,"working/pcvr/game/openxr_loader.dll"));
             Copy(setupPath,Under(stage,"HotD2VR.exe"));
-            if(!update) {
+            if(!update&&!import) {
                 int done=0;foreach(string file in gameFiles) {cancel.ThrowIfCancellationRequested();string relative=file.Substring(source.Length+1);Copy(file,Under(stage,"working/pcvr/game/"+relative));progress(35+(++done*40/gameFiles.Count),"Copying your game ("+done+" / "+gameFiles.Count+")...");}
-            } else {
+            } else if(update) {
                 string settings=Under(root,"pcvr/vr-settings.json");if(File.Exists(settings))Copy(settings,Under(stage,"pcvr/vr-settings.json"));
             }
             // Verify the playable executable after copying, before changing destination.
@@ -193,7 +195,9 @@ public static class InstallerCore {
             cancel.ThrowIfCancellationRequested();Idle();
             var modPaths=new List<string>(PayloadFiles);modPaths.AddRange(DependencyFiles);modPaths.AddRange(new[]{"working/pcvr/game/ddraw.dll","working/pcvr/game/openxr_loader.dll","HotD2VR.exe"});
             var owned=new Dictionary<string,string>();foreach(string path in modPaths)owned[path]=Hash(Under(stage,path));
-            WriteJson(Under(stage,"install.json"),new{product="HotD2VR",root=root,release=Release,probe=23,game_sha256=expectedGameHash,source=source,disc=String.IsNullOrWhiteSpace(options.Disc)?"":Full(options.Disc),files=owned});
+            string disc=import?Under(root,"working/intake/windows-data.iso"):String.IsNullOrWhiteSpace(options.Disc)?"":Full(options.Disc);
+            if(update&&String.IsNullOrWhiteSpace(options.Disc)){var previous=Owned(root);if(previous.ContainsKey("disc"))disc=previous["disc"] as string??"";}
+            WriteJson(Under(stage,"install.json"),new{product="HotD2VR",root=root,release=Release,probe=23,game_sha256=expectedGameHash,source=source,disc=disc,files=owned});
             if(!update) {if(Directory.Exists(root))Directory.Delete(root);Directory.Move(stage,root);}
             else {
                 backup=Under(root,"backups/"+DateTime.UtcNow.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(backup);

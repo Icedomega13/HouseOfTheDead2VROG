@@ -29,6 +29,70 @@ public static class InstallerTests {
     }
     static InstallOptions Options(string source,string target,string cache){return new InstallOptions{Source=source,Destination=target,Cache=cache,Disc="",Shortcut=false,Register=false};}
     static void Progress(int value,string text){}
+    static void Put(byte[] bytes,int offset,uint value){Buffer.BlockCopy(BitConverter.GetBytes(value),0,bytes,offset,4);}
+    static int DiscRecord(byte[] bytes,int offset,string name,uint sector,uint size,byte flags=0) {
+        byte[] text=Encoding.ASCII.GetBytes(name);int length=33+text.Length;if(length%2!=0)length++;
+        bytes[offset]=(byte)length;Put(bytes,offset+2,sector);Put(bytes,offset+10,size);bytes[offset+25]=flags;bytes[offset+32]=(byte)text.Length;Buffer.BlockCopy(text,0,bytes,offset+33,text.Length);return length;
+    }
+    static byte[] DiscFixture() {
+        byte[] iso=new byte[24*2048];int pvd=16*2048;iso[pvd]=1;Encoding.ASCII.GetBytes("CD001").CopyTo(iso,pvd+1);iso[pvd+6]=1;
+        DiscRecord(iso,pvd+156,"\0",20,2048,2);int pos=20*2048;
+        pos+=DiscRecord(iso,pos,"DATA.CAB;1",21,1);pos+=DiscRecord(iso,pos,"THE HOUSE OF THE DEAD 2.MSI;1",22,1);DiscRecord(iso,pos,"HOD2.EXE;1",23,1);
+        iso[21*2048]=10;iso[22*2048]=20;iso[23*2048]=30;return iso;
+    }
+    static void DiscChecks(string home,string cache,string setup) {
+        string area=Path.Combine(home,"Disc import fixtures");Directory.CreateDirectory(area);byte[] iso=DiscFixture();
+        string input=Path.Combine(area,"source.iso");File.WriteAllBytes(input,iso);
+        string output=Path.Combine(area,"prepared.iso");DiscImport.PrepareIso(input,output,CancellationToken.None,Progress);
+        Check(InstallerCore.Hash(input)==InstallerCore.Hash(output),"ISO imported without changing its bytes");
+        string raw=Path.Combine(area,"source.img");using(var stream=File.Create(raw))for(int i=0;i<iso.Length/2048;i++) {byte[] sector=new byte[2352];for(int j=1;j<11;j++)sector[j]=255;sector[15]=1;Buffer.BlockCopy(iso,i*2048,sector,16,2048);stream.Write(sector,0,sector.Length);}
+        string rawOutput=Path.Combine(area,"raw.iso");DiscImport.PrepareIso(raw,rawOutput,CancellationToken.None,Progress);
+        Check(InstallerCore.Hash(input)==InstallerCore.Hash(rawOutput),"MODE1/2352 IMG data track converts exactly to ISO");
+        string archive=Path.Combine(area,"download.zip");using(var zip=ZipFile.Open(archive,ZipArchiveMode.Create)){zip.CreateEntryFromFile(raw,"Disc/source.img");using(var entry=zip.CreateEntry("Disc/source.sub").Open())entry.WriteByte(77);}
+        string zipped=Path.Combine(area,"zip.iso");DiscImport.PrepareIso(archive,zipped,CancellationToken.None,Progress);
+        Check(InstallerCore.Hash(input)==InstallerCore.Hash(zipped),"ZIP directly converts only its image, without extracting SUB");
+        Check(!Directory.Exists(Path.Combine(area,"Disc")),"archive paths are never extracted as folders");
+        string extracted=Path.Combine(area,"Root disc files");Directory.CreateDirectory(extracted);DiscImport.ReadDiscFiles(output,extracted,CancellationToken.None);
+        Check(Directory.GetFiles(extracted).Length==3&&File.ReadAllBytes(Path.Combine(extracted,"HOD2.EXE"))[0]==30,"bounded ISO reader extracts only three expected root files");
+        Reject(delegate{DiscImport.ReadLayout(Path.Combine(extracted,"THE HOUSE OF THE DEAD 2.MSI"));},"invalid MSI metadata rejected without executing it");
+        foreach(string name in new[]{"..","../escape","C:bad","CON","com1.txt","LPT0","trailing.","trailing "})Reject(delegate{DiscImport.SafeName(name);},"unsafe/reserved disc filename rejected: "+name);
+        string malicious=Path.Combine(area,"unsafe.zip");using(var zip=ZipFile.Open(malicious,ZipArchiveMode.Create)){zip.CreateEntry("../escape.img");}
+        Reject(delegate{DiscImport.PrepareIso(malicious,Path.Combine(area,"unsafe.iso"),CancellationToken.None,Progress);},"ZIP path traversal rejected before output");
+        string ambiguous=Path.Combine(area,"ambiguous.zip");using(var zip=ZipFile.Open(ambiguous,ZipArchiveMode.Create)){zip.CreateEntry("one.img");zip.CreateEntry("two.iso");}
+        Reject(delegate{DiscImport.PrepareIso(ambiguous,Path.Combine(area,"ambiguous.iso"),CancellationToken.None,Progress);},"multiple disc images require an explicit selection");
+        string empty=Path.Combine(area,"empty.zip");using(var zip=ZipFile.Open(empty,ZipArchiveMode.Create)){zip.CreateEntry("readme.txt");}
+        Reject(delegate{DiscImport.PrepareIso(empty,Path.Combine(area,"empty.iso"),CancellationToken.None,Progress);},"ZIP with no supported image rejected");
+        using(var file=new FileStream(raw,FileMode.Open,FileAccess.Write)){file.Position=2352+15;file.WriteByte(2);}
+        Reject(delegate{DiscImport.PrepareIso(raw,Path.Combine(area,"wrong-mode.iso"),CancellationToken.None,Progress);},"mixed/non-MODE1 raw sectors rejected");
+        byte[] damaged=(byte[])iso.Clone();damaged[16*2048+1]=0;File.WriteAllBytes(Path.Combine(area,"damaged.iso"),damaged);
+        Reject(delegate{DiscImport.PrepareIso(Path.Combine(area,"damaged.iso"),Path.Combine(area,"bad-pvd.iso"),CancellationToken.None,Progress);},"missing ISO9660 data track rejected");
+        damaged=(byte[])iso.Clone();Put(damaged,16*2048+158,500);File.WriteAllBytes(Path.Combine(area,"bad-offset.iso"),damaged);
+        Reject(delegate{DiscImport.ReadDiscFiles(Path.Combine(area,"bad-offset.iso"),extracted,CancellationToken.None);},"ISO extent outside image rejected");
+        damaged=(byte[])iso.Clone();damaged[20*2048+25]=128;File.WriteAllBytes(Path.Combine(area,"multi-extent.iso"),damaged);
+        Reject(delegate{DiscImport.ReadDiscFiles(Path.Combine(area,"multi-extent.iso"),extracted,CancellationToken.None);},"multi-extent game files rejected");
+        damaged=(byte[])iso.Clone();damaged[20*2048]=1;File.WriteAllBytes(Path.Combine(area,"bad-record.iso"),damaged);
+        Reject(delegate{DiscImport.ReadDiscFiles(Path.Combine(area,"bad-record.iso"),extracted,CancellationToken.None);},"malformed ISO directory rejected");
+        string huge=Path.Combine(area,"oversized.iso");using(var file=File.Create(huge))file.SetLength(1073741824L+2048);
+        Reject(delegate{DiscImport.PrepareIso(huge,Path.Combine(area,"oversized-output.iso"),CancellationToken.None,Progress);},"oversized image rejected before reading it");File.Delete(huge);
+        var cancellation=new CancellationTokenSource();bool cancelled=false;
+        try{DiscImport.PrepareIso(input,Path.Combine(area,"cancelled.iso"),cancellation.Token,delegate(int value,string text){cancellation.Cancel();});}catch(OperationCanceledException){cancelled=true;}
+        Check(cancelled,"image conversion observes cancellation between sectors");
+        string target=Path.Combine(area,"Rejected installation");
+        Reject(delegate{InstallerCore.Install(Options(malicious,target,cache),Package("fixture"),setup,Progress,CancellationToken.None);},"invalid ZIP commits no installation");
+        Check(!Directory.Exists(target)&&Directory.GetDirectories(area,".HotD2VR-stage-*").Length==0,"failed disc import cleans its owned staging files");
+        string one=Path.Combine(area,"one.bin"),cab=Path.Combine(area,"fixture.cab");File.WriteAllText(one,"Cabinet fixture, not game data");
+        using(var process=System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"makecab.exe"),InstallerCore.Quote(one)+" "+InstallerCore.Quote(cab)){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true})){process.StandardOutput.ReadToEnd();process.StandardError.ReadToEnd();process.WaitForExit();Check(process.ExitCode==0,"Windows builds a tiny cabinet fixture");}
+        var layout=new List<DiscImport.GameEntry>{new DiscImport.GameEntry{Id="one.bin",Relative="cam/one.bin",Size=new FileInfo(one).Length}};
+        string cabGame=Path.Combine(area,"Cabinet game");DiscImport.ExtractCabinet(cab,cabGame,layout,CancellationToken.None,Progress);
+        Check(InstallerCore.Hash(one)==InstallerCore.Hash(Path.Combine(cabGame,"cam/one.bin")),"actual Windows cabinet callback extracts an exact mapped file");
+        layout[0].Size++;
+        Reject(delegate{DiscImport.ExtractCabinet(cab,Path.Combine(area,"Wrong size"),layout,CancellationToken.None,Progress);},"native cabinet rejects MSI/file size mismatch");layout[0].Size--;
+        layout[0].Id="unknown.bin";Reject(delegate{DiscImport.ExtractCabinet(cab,Path.Combine(area,"Unknown file"),layout,CancellationToken.None,Progress);},"unmapped cabinet entry rejected");layout[0].Id="one.bin";
+        var stop=new CancellationTokenSource();stop.Cancel();cancelled=false;
+        try{DiscImport.ExtractCabinet(cab,Path.Combine(area,"Cancelled cabinet"),layout,stop.Token,Progress);}catch(OperationCanceledException){cancelled=true;}
+        Check(cancelled,"native cabinet cancellation stays within managed error handling");
+        Check(InstallerCore.Hash(input)==InstallerCore.Hash(output),"selected source image remains unchanged after failure tests");
+    }
     public static int Main(string[] args) {
         try {
             if(args.Length==5&&args[0]=="/production-install") {
@@ -41,6 +105,7 @@ public static class InstallerTests {
             if(args.Length!=3)throw new Exception("Usage: InstallerTests <fresh-workspace-test-folder> <verified-dependency-cache> <setup-exe>");
             string home=InstallerCore.Full(args[0]),cache=InstallerCore.Full(args[1]),setup=args[2];InstallerCore.NoLinks(home);
             if(Directory.Exists(home))throw new Exception("Tests refuse to overwrite an existing folder.");Directory.CreateDirectory(home);
+            DiscChecks(home,cache,setup);
             string original=Path.Combine(home,"Original game — test"),target=Path.Combine(home,"Installed VR — test");Directory.CreateDirectory(original);
             File.WriteAllText(Path.Combine(original,"Hod2.exe"),"Nonexecutable fixture for installer tests only");
             File.WriteAllText(Path.Combine(original,"Hod2.ini"),"player configuration");
@@ -89,7 +154,9 @@ public static class InstallerTests {
             string settings=Path.Combine(target,"pcvr/vr-settings.json"),save=Path.Combine(target,"working/pcvr/game/player-save.dat");File.WriteAllText(settings,"{\"EyeSize\":800,\"AimingCursor\":false}");File.WriteAllText(save,"saved progress");
             string old=InstallerCore.Hash(Path.Combine(target,"build/pcvr/ddraw.dll"));
             var options=Options(Path.Combine(target,"working/pcvr/game"),target,cache);
+            var withDisc=InstallerCore.Owned(target);withDisc["disc"]=Path.Combine(target,"working/intake/windows-data.iso");InstallerCore.WriteJson(Path.Combine(target,"install.json"),withDisc);
             InstallerCore.Install(options,Package("v2"),setup,Progress,CancellationToken.None,expected);
+            Check((string)InstallerCore.Owned(target)["disc"]==(string)withDisc["disc"],"update preserves the automatic imported-disc path");
             Check(InstallerCore.Hash(Path.Combine(target,"build/pcvr/ddraw.dll"))!=old,"update replaces mod DLL");
             Check(File.ReadAllText(settings).Contains("800")&&File.ReadAllText(save)=="saved progress","update preserves preferences and saves");
             string[] backups=Directory.GetDirectories(Path.Combine(target,"backups"));Check(backups.Length==1&&InstallerCore.Hash(Path.Combine(backups[0],"build/pcvr/ddraw.dll"))==old,"previous mod preserved before update");

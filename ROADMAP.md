@@ -49,17 +49,19 @@ version-23 physical play-test; wider coverage remains pending.
 
 The alpha installer is now implemented; see [setup instructions](INSTALL.md).
 Players need no developer tools. It creates a separate copy from a supported
-original-PC installation, optionally uses the player's ISO, downloads verified
+original-PC disc-image ZIP/IMG/ISO or installation, automatically prepares the disc
+for imported downloads, downloads verified
 dependencies, reports the active 32-bit runtime and creates a launcher/removal entry.
 Updates back up replaced mod files and preserve settings/saves. Failed replacement
-rolls back; removal retains the game/saves and modified files. Archive/disc installer
-extraction remains outside setup: select an already-installed game folder.
+rolls back; removal retains the game/saves, imported ISO and modified files.
+The tested CloneCD download now imports directly without original setup.
 
 Implemented setup flow:
 
-1. Select an existing original-PC game installation, or select game files the
-   player has downloaded and installed separately. ZIPs/disc installers are not
-   accepted as game folders; an optional ISO is used only as original media.
+1. Select the original-PC disc-image ZIP downloaded by the player (no manual
+   unpacking or installation), a loose IMG/ISO, or an existing game installation.
+   The import prepares a local ISO for read-only mounting at launch; installed
+   folders can still use optional ISO or physical/already-mounted media.
 2. Offer an optional **Find game files / setup help** button that opens a help or
    acquisition page in the player's browser. The optional Find game files button
    opens the maintainer-requested My Abandonware game page. The player obtains

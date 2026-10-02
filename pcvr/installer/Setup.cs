@@ -78,10 +78,13 @@ public sealed class SetupForm:Form {
         Text="HotD2VR Setup — Alpha 23";Font=new Font("Segoe UI",10);ClientSize=new Size(760,605);FormBorderStyle=FormBorderStyle.FixedDialog;MaximizeBox=false;StartPosition=FormStartPosition.CenterScreen;AutoScaleMode=AutoScaleMode.Dpi;BackColor=Color.FromArgb(246,248,251);
         Label title=LabelAt("Bring the arcade into VR",24,22,710,38);title.Font=new Font("Segoe UI",22,FontStyle.Bold);title.ForeColor=Color.FromArgb(30,48,69);
         LabelAt("HotD2VR "+InstallerCore.Release+"  ·  Original Windows PC game required",26,66,710,26);
-        LabelAt("Select your own game. Setup creates a separate playable copy and downloads\nverified graphics/OpenXR dependencies. No game files are included.",26,104,710,47);
-        Field("Original game folder (contains Hod2.exe)",source,169,delegate {using(var d=new FolderBrowserDialog()){d.Description="Choose your installed original PC game folder containing Hod2.exe";d.ShowNewFolderButton=false;if(d.ShowDialog()==DialogResult.OK)source.Text=d.SelectedPath;}});
-        Field("Install HotD2VR to",destination,249,delegate {using(var d=new FolderBrowserDialog()){d.Description="Choose a dedicated empty HotD2VR folder, or an existing HotD2VR installation";if(d.ShowDialog()==DialogResult.OK)destination.Text=d.SelectedPath;}});
-        Field("Original disc ISO (optional — leave blank for physical / mounted media)",disc,329,delegate {using(var d=new OpenFileDialog()){d.Filter="Original game ISO (*.iso)|*.iso";if(d.ShowDialog()==DialogResult.OK)disc.Text=d.FileName;}});
+        LabelAt("Select the game ZIP you downloaded — no extraction or flatscreen setup needed.\nSetup prepares your VR copy and disc. No game files are included.",26,104,710,47);
+        Field("Game download (ZIP, IMG or ISO)",source,169,delegate {using(var d=new OpenFileDialog()){d.Filter="Game download or disc image (*.zip;*.img;*.iso)|*.zip;*.img;*.iso";d.Title="Select your Windows PC game download (you can leave the ZIP unopened)";if(d.ShowDialog()==DialogResult.OK)source.Text=d.FileName;}});
+        var folder=new LinkLabel(){Text="Use an installed game folder instead",AutoSize=true};folder.SetBounds(26,230,430,22);Controls.Add(folder);
+        folder.LinkClicked+=delegate {if(busy)return;using(var d=new FolderBrowserDialog()){d.Description="Choose the original PC game folder containing Hod2.exe and all game data";d.ShowNewFolderButton=false;if(d.ShowDialog()==DialogResult.OK)source.Text=d.SelectedPath;}};
+        Field("Install HotD2VR to",destination,261,delegate {using(var d=new FolderBrowserDialog()){d.Description="Choose a dedicated empty HotD2VR folder, or an existing HotD2VR installation";if(d.ShowDialog()==DialogResult.OK)destination.Text=d.SelectedPath;}});
+        var discBrowse=Field("Disc ISO for installed folders only (downloads prepare this automatically)",disc,341,delegate {if(File.Exists(source.Text))return;using(var d=new OpenFileDialog()){d.Filter="Original game ISO (*.iso)|*.iso";if(d.ShowDialog()==DialogResult.OK)disc.Text=d.FileName;}});
+        source.TextChanged+=delegate {disc.Enabled=discBrowse.Enabled=!busy&&!File.Exists(source.Text);};
         destination.Text=Program.DefaultRoot();
         try {var m=InstallerCore.Owned(destination.Text);source.Text=Path.Combine(destination.Text,@"working\pcvr\game");disc.Text=m["disc"] as string;}catch(Exception){}
         shortcut.SetBounds(26,410,320,26);shortcut.Text="Create a Play HotD2VR desktop shortcut";shortcut.Checked=true;Controls.Add(shortcut);
@@ -97,7 +100,7 @@ public sealed class SetupForm:Form {
         worker.DoWork+=delegate(object sender,DoWorkEventArgs e){e.Result=InstallerCore.Install((InstallOptions)e.Argument,Program.Payload(),Assembly.GetExecutingAssembly().Location,delegate(int value,string message){worker.ReportProgress(value,message);},cancellation.Token);};
         worker.ProgressChanged+=delegate(object sender,ProgressChangedEventArgs e){progress.Value=e.ProgressPercentage;status.Text=(string)e.UserState;};
         worker.RunWorkerCompleted+=delegate(object sender,RunWorkerCompletedEventArgs e){
-            busy=false;cancel.Text="Close";source.Enabled=destination.Enabled=disc.Enabled=install.Enabled=shortcut.Enabled=true;
+            busy=false;cancel.Text="Close";source.Enabled=destination.Enabled=install.Enabled=shortcut.Enabled=true;disc.Enabled=discBrowse.Enabled=!File.Exists(source.Text);
             if(e.Error!=null){status.Text=cancellation.IsCancellationRequested?"Setup cancelled. Your original game was not changed.":"Setup could not finish. See the message for details.";if(!cancellation.IsCancellationRequested)MessageBox.Show(this,e.Error.Message,"Setup could not finish",MessageBoxButtons.OK,MessageBoxIcon.Error);}
             else {installed=InstallerCore.Full(destination.Text);play.Enabled=true;status.Text="Installed. Connect your headset through Virtual Desktop, then choose Play HotD2VR.";MessageBox.Show(this,"HotD2VR is ready.\n\n"+e.Result+"\n\n"+InstallerCore.RuntimeStatus()+"\n\nLeft Y toggles aiming markers; B or lowering the gun reloads.","Setup complete",MessageBoxButtons.OK,MessageBoxIcon.Information);}
             cancellation.Dispose();
@@ -106,12 +109,12 @@ public sealed class SetupForm:Form {
     }
     Label LabelAt(string text,int x,int y,int w,int h){var l=new Label(){Text=text};l.SetBounds(x,y,w,h);Controls.Add(l);return l;}
     Button ButtonAt(string text,int x,int y,int w,int h){var b=new Button(){Text=text};b.SetBounds(x,y,w,h);Controls.Add(b);return b;}
-    void Field(string label,TextBox field,int y,Action browse){LabelAt(label,26,y,710,23);field.SetBounds(26,y+28,578,29);Controls.Add(field);var b=ButtonAt("Browse…",617,y+26,117,32);b.Click+=delegate {if(!busy)browse();};}
+    Button Field(string label,TextBox field,int y,Action browse){LabelAt(label,26,y,710,23);field.SetBounds(26,y+28,578,29);Controls.Add(field);var b=ButtonAt("Browse…",617,y+26,117,32);b.Click+=delegate {if(!busy)browse();};return b;}
     void BeginInstall(object sender,EventArgs e) {
         try {
-            InstallerCore.Idle();if(String.IsNullOrWhiteSpace(source.Text)||String.IsNullOrWhiteSpace(destination.Text))throw new IOException("Choose your original game folder and installation destination first.");
+            InstallerCore.Idle();if(String.IsNullOrWhiteSpace(source.Text)||String.IsNullOrWhiteSpace(destination.Text))throw new IOException("Choose your game ZIP/disc image (or installed folder) and installation destination first.");
             cancellation=new CancellationTokenSource();busy=true;install.Enabled=play.Enabled=source.Enabled=destination.Enabled=disc.Enabled=shortcut.Enabled=false;cancel.Text="Cancel setup";
-            worker.RunWorkerAsync(new InstallOptions(){Source=source.Text,Destination=destination.Text,Disc=disc.Text,Shortcut=shortcut.Checked,Register=true,Cache=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"HotD2VR-downloads")});
+            worker.RunWorkerAsync(new InstallOptions(){Source=source.Text,Destination=destination.Text,Disc=File.Exists(source.Text)?"":disc.Text,Shortcut=shortcut.Checked,Register=true,Cache=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"HotD2VR-downloads")});
         } catch(Exception error){MessageBox.Show(this,error.Message,"HotD2VR Setup",MessageBoxButtons.OK,MessageBoxIcon.Error);}
     }
 }

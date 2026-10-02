@@ -2,7 +2,7 @@ param([string]$ModDll,[string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 if(!$ModDll){$ModDll=Join-Path $root 'build/pcvr/ddraw.dll'}
-if(!$OutputDirectory){$OutputDirectory=Join-Path $root 'build/pcvr/installer-alpha23'}
+if(!$OutputDirectory){$OutputDirectory=Join-Path $root 'build/pcvr/installer-disc-alpha23'}
 $output=[IO.Path]::GetFullPath($OutputDirectory)
 if(!$output.StartsWith($root+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Installer output must stay inside this checkout.'}
 if(Test-Path -LiteralPath $output){throw 'Choose a fresh installer output directory.'}
@@ -37,13 +37,13 @@ $archive=[IO.Compression.ZipFile]::Open($zip,[IO.Compression.ZipArchiveMode]::Cr
 try{foreach($relative in @($files.Keys)+@('package.json')){[IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,(Join-Path $payload $relative),$relative,[IO.Compression.CompressionLevel]::Optimal)|Out-Null}}finally{$archive.Dispose()}
 $csc=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 if(!(Test-Path -LiteralPath $csc)){throw '.NET Framework x64 C# compiler not found.'}
-$exe=Join-Path $output 'HotD2VR-Setup-0.2.0-alpha.23.exe'
+$exe=Join-Path $output 'HotD2VR-Setup-0.2.1-alpha.23.exe'
 $refs=@('/r:System.dll','/r:System.Core.dll','/r:System.Drawing.dll','/r:System.Windows.Forms.dll','/r:System.Web.Extensions.dll','/r:System.IO.Compression.dll','/r:System.IO.Compression.FileSystem.dll')
-$source=@('InstallerCore.cs','Setup.cs','AssemblyInfo.cs') | ForEach-Object {Join-Path $PSScriptRoot "installer/$_"}
+$source=@('InstallerCore.cs','DiscImport.cs','Setup.cs','AssemblyInfo.cs') | ForEach-Object {Join-Path $PSScriptRoot "installer/$_"}
 & $csc /nologo /warn:4 /warnaserror+ /optimize+ /platform:x64 /target:winexe "/out:$exe" "/win32manifest:$PSScriptRoot/installer/setup.manifest" "/resource:$zip,HotD2VR.Payload" @refs @source
 if($LASTEXITCODE){throw 'Installer compile failed.'}
 $test=Join-Path $output 'InstallerTests.exe'
-& $csc /nologo /warn:4 /warnaserror+ /optimize+ /platform:x64 /target:exe "/out:$test" @refs (Join-Path $PSScriptRoot 'installer/InstallerCore.cs') (Join-Path $PSScriptRoot 'installer/InstallerTests.cs')
+& $csc /nologo /warn:4 /warnaserror+ /optimize+ /platform:x64 /target:exe "/out:$test" @refs (Join-Path $PSScriptRoot 'installer/InstallerCore.cs') (Join-Path $PSScriptRoot 'installer/DiscImport.cs') (Join-Path $PSScriptRoot 'installer/InstallerTests.cs')
 if($LASTEXITCODE){throw 'Installer tests compile failed.'}
-[ordered]@{release='v0.2.0-alpha.23';probe=23;installer_sha256=(Get-FileHash -LiteralPath $exe).Hash.ToLowerInvariant();production_dll_sha256=$manifest['build/pcvr/ddraw.dll'];payload_files=$manifest;game_files_included=0;third_party_binaries_included=0} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output 'installer-package-report.json') -Encoding utf8
+[ordered]@{release='v0.2.1-alpha.23';probe=23;installer_sha256=(Get-FileHash -LiteralPath $exe).Hash.ToLowerInvariant();production_dll_sha256=$manifest['build/pcvr/ddraw.dll'];payload_files=$manifest;game_files_included=0;third_party_binaries_included=0} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output 'installer-package-report.json') -Encoding utf8
 Write-Output "Built installer: $exe"

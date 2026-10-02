@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.2.1-alpha.23 — direct disc-download setup
+
+- Select the downloaded Windows disc-image ZIP directly. Setup extracts the game,
+  converts the CloneCD MODE1/2352 IMG to ISO and uses that disc automatically at
+  launch. No manual unpacking, disc tools or original flatscreen installation.
+- Also accept loose IMG/ISO; retain the existing installed-folder option. Read
+  MSI metadata without executing installer actions, and extract only mapped game
+  files through Windows cabinet APIs. Original downloads/files remain untouched.
+- Preserve the imported ISO on updates/removal; reuse the existing game on update.
+- 79 automated archive/disc/cabinet and installer lifecycle checks passed. All
+  2,047 real imported game files and the converted ISO match the working copy by
+  SHA-256; the installed DirectDraw/Direct3D stack passes its local smoke check.
+- Exact accepted probe-23 mod retained. No game files or disc image in the release.
+  New-user PCs and physical headset startup still need community testing.
+
 ## v0.2.0-alpha.23 — community installer alpha
 
 - Prebuilt Windows setup: select the original PC game, create a separate copy,
