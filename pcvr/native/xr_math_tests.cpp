@@ -96,6 +96,39 @@ int main() {
     require(!hotd2_xr::cinematic_bar(camera,bars,4),"large fade/dialogue panel preserved");
     for(unsigned i=0;i<4;++i){bars[i].y=i>=2?.44f:.36f;}
     require(!hotd2_xr::cinematic_bar(camera,bars,4),"wrong-height edge panel preserved");
+    // Captured native shot flame/glow transforms, not an invented flat quad.
+    XMFLOAT4X4 flash_world={.09910952f,0,.01331557f,0,-.001026655f,.09970232f,.007641524f,0,
+        -.01327594f,-.007710181f,.09881449f,0,.1343314f,.07809962f,-1,1};
+    auto screen_view=XMMatrixScaling(1,1,-1),flash=XMLoadFloat4x4(&flash_world);
+    XMFLOAT3 flash_points[]={{.06994238f,.1670634f,.9046564f},{.1166479f,.1093287f,.9681388f},
+        {.05978623f,.1608784f,.9065035f},{.1064917f,.1031437f,.9699859f}};
+    Vertex shot[4]={};
+    auto fill_shot=[&](FXMMATRIX model,const XMFLOAT3* points) {
+        auto inverse=XMMatrixInverse(nullptr,model*screen_view);
+        for(unsigned i=0;i<4;++i) {
+            XMFLOAT3 p;XMStoreFloat3(&p,XMVector3TransformCoord(XMLoadFloat3(&points[i]),inverse));
+            shot[i].x=p.x;shot[i].y=p.y;shot[i].z=p.z;
+        }
+    };
+    fill_shot(flash,flash_points);
+    require(!hotd2_xr::unit_depth_plane(flash*screen_view,shot,4),"captured rotated flame reproduces missed flat classification");
+    require(hotd2_xr::near_screen_effect(flash,screen_view,shot,4),"captured native flame recognized");
+    auto glow=flash;for(unsigned i=0;i<3;++i) glow.r[i]*=.5f;
+    XMFLOAT3 glow_points[]={{.03996668f,-.0109724f,1.019628f},{.03799266f,.1807312f,1.004935f},
+        {.2305304f,-.0109724f,.9940254f},{.2285564f,.1807312f,.9793326f}};
+    fill_shot(glow,glow_points);
+    require(hotd2_xr::near_screen_effect(glow,screen_view,shot,4),"captured native glow recognized");
+    require(!hotd2_xr::near_screen_effect(glow,XMMatrixIdentity(),shot,4),"ordinary level view preserved");
+    require(!hotd2_xr::near_screen_effect(glow,screen_view,shot,3),"non-quad world geometry preserved");
+    auto shifted=glow;shifted.r[3]+=XMVectorSet(0,0,-5,0);
+    require(!hotd2_xr::near_screen_effect(shifted,screen_view,shot,4),"real world particle depth preserved");
+    auto skewed=glow;skewed.r[1]*=2;
+    require(!hotd2_xr::near_screen_effect(skewed,screen_view,shot,4),"nonuniform scene model preserved");
+    auto invalid=glow;invalid.r[0]=XMVectorSet(NAN,0,0,0);
+    require(!hotd2_xr::near_screen_effect(invalid,screen_view,shot,4),"invalid world transform rejected");
+    shot[0].x=NAN;require(!hotd2_xr::near_screen_effect(glow,screen_view,shot,4),"invalid effect vertex rejected");
+    fill_shot(glow,glow_points);shot[0].z+=100;
+    require(!hotd2_xr::near_screen_effect(glow,screen_view,shot,4),"far model geometry preserved");
     auto clip=XMMatrixPerspectiveFovLH(XM_PIDIV2,1,1,100);
     unsigned visibility=99;
     auto sphere=[&](XMMATRIX matrix,XMFLOAT3 center,float radius,unsigned expected,const char* label) {

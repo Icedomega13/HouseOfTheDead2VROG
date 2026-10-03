@@ -54,7 +54,7 @@ static BOOL CALLBACK initialize(PINIT_ONCE, PVOID, PVOID*) {
         wcscat_s(path,L"\\ddraw.dll");
     }
     real = LoadLibraryW(path); // Explicit backend path avoids loading this proxy again.
-    log_line("probe_version=18 arch=x86 backend=%ls loaded=%d error=%lu", path,
+    log_line("probe_version=28 arch=x86 backend=%ls loaded=%d error=%lu", path,
         real != nullptr, real ? 0 : GetLastError());
     return real != nullptr;
 }

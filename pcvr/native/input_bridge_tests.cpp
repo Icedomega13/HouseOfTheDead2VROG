@@ -10,8 +10,13 @@
 #include <vector>
 #include <algorithm>
 #include "xr_bridge.h"
+#include "dual_wield.h"
 static XrGameInput simulated;
-XrGameInput xr_game_input() {return simulated;}
+static hotd2_input::DualShotRouter routed;
+static bool dual_mode=false;
+XrGameInput xr_game_input() {auto input=simulated;if(dual_mode){input.fire=routed.phase==hotd2_input::DualShotRouter::Down;if(routed.phase!=hotd2_input::DualShotRouter::Idle){input.x=routed.current.x;input.y=routed.current.y;input.aim_valid=true;}}return input;}
+void xr_native_cursor_poll(){if(dual_mode)routed.cursor_poll();}
+void xr_native_mouse_poll(){if(dual_mode)routed.mouse_poll();}
 static void log_line(const char*,...) {}
 #include "vtable_hooks.inl"
 #include "input_bridge.inl"
@@ -106,6 +111,19 @@ int main() {
         drained[65].dwOfs==DIK_RETURN&&drained[65].dwData==0,"both native Start keys finish released after queue pressure");
     count=16;keyboard->GetDeviceData(sizeof(events[0]),events,&count,0);
     require(count==0,"retried release is not duplicated after queue drains");
+    dual_mode=true;simulated.active=simulated.aim_valid=true;simulated.reload=false;
+    bool tracked[]={true,true},triggers[]={true,true};float aims_x[]={160,480},aims_y[]={120,360};
+    routed.observe(true,tracked,triggers,aims_x,aims_y,1000);
+    GetCursorPos(&cursor);client=cursor;ScreenToClient(window,&client);mouse->GetDeviceState(sizeof(state),&state);
+    require(state.rgbButtons[0]==0x80&&client.x==(rect.right-rect.left)/4&&client.y==(rect.bottom-rect.top)/4,"real cursor/mouse hooks deliver first hand's matching aim and fire");
+    routed.present(1001);mouse->GetDeviceState(sizeof(state),&state);
+    require(state.rgbButtons[0]==0,"real mouse hook exposes release between overlapping hand presses");
+    routed.present(1002);GetCursorPos(&cursor);client=cursor;ScreenToClient(window,&client);mouse->GetDeviceState(sizeof(state),&state);
+    require(state.rgbButtons[0]==0x80&&client.x==3*(rect.right-rect.left)/4&&client.y==3*(rect.bottom-rect.top)/4,"real cursor/mouse hooks deliver second hand at independent aim");
+    routed.present(1003);mouse->GetDeviceState(sizeof(state),&state);routed.present(1004);
+    require(routed.delivered[0]==1&&routed.delivered[1]==1,"both actual hook input pairs are acknowledged once");
+    original_cursor(&after);require(after.x==actual.x&&after.y==actual.y,"dual dispatch does not move desktop cursor");
+    dual_mode=false;
     mouse->Release();keyboard->Release();input->Release();DestroyWindow(window);
     printf("PASS %u actual Windows input-hook checks\n",checks);return 0;
 }

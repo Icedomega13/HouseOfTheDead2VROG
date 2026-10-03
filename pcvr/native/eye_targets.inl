@@ -1,6 +1,8 @@
 // A separate stereo atlas gives each eye its own rasterization resolution.
 #include "render_state.h"
 #include "pistol_mesh.h"
+#include "ammo_gauge.h"
+#include <array>
 using SavedGameState=hotd2_render::SavedState<IDirect3DDevice7,IDirectDrawSurface7>;
 static bool high_resolution=false;
 static IDirectDrawSurface7* eye_atlas=nullptr;
@@ -137,7 +139,8 @@ static void draw_controller_aid(IDirect3DDevice7* device) {
         for(unsigned eye=0;eye<2;++eye) {
             D3DVIEWPORT7 v={eye*xr_eye_size(),0,xr_eye_size(),xr_eye_size(),0,1};device->SetViewport(&v);
             D3DMATRIX gun_view={},gun_projection={};
-            if(xr_gun_matrices(eye,gun_view,gun_projection)) {
+            for(unsigned hand=0;hand<(xr_dual_wield_enabled()?2u:1u);++hand) {
+            if(hand?xr_hand_gun_matrices(hand,eye,gun_view,gun_projection):xr_gun_matrices(eye,gun_view,gun_projection)) {
                 device->SetRenderState(D3DRENDERSTATE_LIGHTING,FALSE);
                 device->SetRenderState(D3DRENDERSTATE_CLIPPING,TRUE);
                 device->SetRenderState(D3DRENDERSTATE_CULLMODE,D3DCULL_NONE);
@@ -145,6 +148,7 @@ static void draw_controller_aid(IDirect3DDevice7* device) {
                 transform(device,D3DTRANSFORMSTATE_PROJECTION,&gun_projection);
                 HRESULT hr=draw(device,D3DPT_TRIANGLELIST,D3DFVF_XYZ|D3DFVF_DIFFUSE,const_cast<hotd2_pistol::Vertex*>(pistol.data()),static_cast<DWORD>(pistol.size()),0);
                 if(FAILED(hr)) {static unsigned errors=0;if(errors++<3) log_line("VR_PISTOL draw_hr=%08lx",hr);}
+            }
             }
         }
         if(!saved.bind(eye_atlas)) return;
@@ -164,13 +168,45 @@ static void draw_controller_aid(IDirect3DDevice7* device) {
         if(FAILED(composited)){static unsigned errors=0;if(errors++<3)log_line("VR_PISTOL composite_hr=%08lx",composited);}
         device->SetTexture(0,nullptr);device->SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_DIFFUSE);
         device->SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_DIFFUSE);device->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,FALSE);
+        int right_rounds=0,left_rounds=0;
+        if(xr_magazine_gauges(right_rounds,left_rounds)) {
+            int health=0,health_maximum=0;bool show_health=xr_health_gauge(health,health_maximum);
+            static bool health_reported=false;
+            if(show_health&&!health_reported){health_reported=true;log_line("VR_HEALTH_GAUGE enabled=1 above_left_ammo=1 depth_metres=2 shared_player_health=1");}
+            static bool gauge_reported=false;
+            if(!gauge_reported){gauge_reported=true;log_line("VR_AMMO_GAUGES enabled=1 head_relative=1 depth_metres=2 counts=native capacity=6 right_on_right=1");}
+            device->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,TRUE);
+            for(unsigned eye=0;eye<2;++eye) {
+                D3DVIEWPORT7 v={eye*xr_eye_size(),0,xr_eye_size(),xr_eye_size(),0,1};device->SetViewport(&v);
+                std::array<Dot,576> vertices={};unsigned count=0;
+                for(unsigned hand=0;hand<(show_health?3u:2u);++hand) {
+                    unsigned start=count;bool valid=true;
+                    auto rectangle=[&](float x0,float y0,float x1,float y1,uint32_t color){
+                        float px[4]={},py[4]={};const float x[]={x0,x1,x0,x1},y[]={y0,y0,y1,y1};
+                        for(unsigned i=0;i<4;++i)if(!xr_ammo_gauge_vertex(eye,x[i],y[i],px[i],py[i]))valid=false;
+                        if(!valid||count+6>vertices.size()){valid=false;return;}
+                        const unsigned indices[]={0,1,2,2,1,3};float size=static_cast<float>(xr_eye_size());
+                        for(auto i:indices)vertices[count++]={(px[i]+eye)*size,py[i]*size,0,1,color};
+                    };
+                    if(hand==2)hotd2_hud::health_meter(health,health_maximum,rectangle);
+                    else hotd2_hud::ammo_gauge(hand,hand?left_rounds:right_rounds,rectangle);
+                    if(!valid)count=start;
+                }
+                if(count){HRESULT hr=draw(device,D3DPT_TRIANGLELIST,D3DFVF_XYZRHW|D3DFVF_DIFFUSE,vertices.data(),count,0);
+                    if(FAILED(hr)){static unsigned errors=0;if(errors++<3)log_line("VR_AMMO_GAUGES draw_hr=%08lx",hr);}}
+            }
+            device->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,FALSE);
+        }
         for(unsigned eye=0;eye<2;++eye) {
             D3DVIEWPORT7 v={eye*xr_eye_size(),0,xr_eye_size(),xr_eye_size(),0,1};device->SetViewport(&v);
-            float x=0,y=0;if(!xr_pointer_vertex(eye,x,y)||x<0||x>1||y<0||y>1) continue;
+            for(unsigned hand=0;hand<(xr_dual_wield_enabled()?2u:1u);++hand) {
+            float x=0,y=0;if(!xr_aim_cursor_visible()||!(hand?xr_hand_pointer_vertex(hand,eye,x,y):xr_pointer_vertex(eye,x,y))||x<0||x>1||y<0||y>1) continue;
             float size=static_cast<float>(xr_eye_size());x=(x+eye)*size;y*=size;
             float radius=size*0.004f;
-            Dot dot[]={{x-radius,y,0,1,0xff00ff40},{x,y-radius,0,1,0xff00ff40},{x,y+radius,0,1,0xff00ff40},{x+radius,y,0,1,0xff00ff40}};
+            DWORD color=hand?0xff00c8ff:0xff00ff40;
+            Dot dot[]={{x-radius,y,0,1,color},{x,y-radius,0,1,color},{x,y+radius,0,1,color},{x+radius,y,0,1,color}};
             draw(device,D3DPT_TRIANGLESTRIP,D3DFVF_XYZRHW|D3DFVF_DIFFUSE,dot,4,0);
+            }
         }
     }
 }

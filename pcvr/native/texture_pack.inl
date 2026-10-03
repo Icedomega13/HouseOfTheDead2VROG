@@ -1,9 +1,13 @@
 #include "texture_images.h"
 static bool texture_pack_enabled=false,texture_dump_enabled=false;
 static std::wstring texture_folder;
-struct TextureEntry {IDirectDrawSurface7* original=nullptr;IDirectDrawSurface7* replacement=nullptr;DWORD uniqueness=0;bool dynamic=false;};
+struct TextureEntry {IDirectDrawSurface7* original=nullptr;IDirectDrawSurface7* replacement=nullptr;DWORD uniqueness=0;bool dynamic=false;std::string content_key;};
 static std::vector<TextureEntry> texture_entries;
 static size_t texture_source_bytes=0,texture_replacement_bytes=0;
+static const char* cached_texture_key(IDirectDrawSurface7* source) {
+    for(const auto& entry:texture_entries) if(entry.original==source) return entry.dynamic?"changing":entry.content_key.c_str();
+    return "uncached"; // Trace only: never add GPU readbacks to normal gameplay.
+}
 static void configure_texture_pack(const wchar_t* config) {
     texture_pack_enabled=GetPrivateProfileIntW(L"Textures",L"Enabled",0,config)!=0;
     texture_dump_enabled=GetPrivateProfileIntW(L"Textures",L"Dump",0,config)!=0;
@@ -58,7 +62,7 @@ static IDirectDrawSurface7* replacement_texture(IDirectDrawSurface7* source) {
             log_line("TEXTURE_DUMP key=%s size=%ux%u bits=%lu alpha_mask=%08lx saved=%d",hash.c_str(),original.width,original.height,bits,desc.ddpfPixelFormat.dwRGBAlphaBitMask,ok);
         }
     }
-    TextureEntry entry;entry.original=source;entry.uniqueness=unique;source->AddRef();
+    TextureEntry entry;entry.original=source;entry.uniqueness=unique;entry.content_key=hash;source->AddRef();
     texture_source_bytes+=static_cast<size_t>(desc.dwWidth)*desc.dwHeight*(bits/8);
     hotd2_texture::Image replacement;
     if(texture_pack_enabled&&GetFileAttributesW((texture_folder+L"hd-textures\\"+filename).c_str())!=INVALID_FILE_ATTRIBUTES) {

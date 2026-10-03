@@ -20,12 +20,28 @@ static float yaw=0,pitch=0,roll=0;
 unsigned xr_eye_size(){return 400;}
 bool xr_frame_ready(){return true;}
 XrGameInput xr_game_input(){XrGameInput out;out.active=out.aim_valid=true;return out;}
-bool xr_pointer_vertex(unsigned,float&,float&){return false;}
+static bool cursor_visible=false;
+static bool dual_wield=false;
+bool xr_dual_wield_enabled(){return dual_wield;}
+bool xr_aim_cursor_visible(){return cursor_visible;}
+bool xr_pointer_vertex(unsigned,float& x,float& y){x=.9f;y=.1f;return true;}
 bool xr_gun_matrices(unsigned eye,D3DMATRIX& view,D3DMATRIX& projection){
     using namespace DirectX;XMFLOAT4X4 m;
     XMStoreFloat4x4(&m,XMMatrixTranslation(0,.035f,-.06f)*XMMatrixRotationRollPitchYaw(pitch,yaw,roll)*XMMatrixTranslation(eye==0?.003f:-.003f,0,.5f));
     memcpy(&view,&m,sizeof(m));XMStoreFloat4x4(&m,XMMatrixOrthographicLH(.3f,.3f,.01f,1));memcpy(&projection,&m,sizeof(m));return true;
 }
+bool xr_hand_gun_matrices(unsigned hand,unsigned eye,D3DMATRIX& view,D3DMATRIX& projection){
+    if(!dual_wield||hand!=1)return false;
+    bool ok=xr_gun_matrices(eye,view,projection);view._41-=.09f;return ok;
+}
+bool xr_hand_pointer_vertex(unsigned hand,unsigned eye,float& x,float& y){if(hand!=1||!dual_wield)return false;bool ok=xr_pointer_vertex(eye,x,y);x=.1f;return ok;}
+static bool gauges=false;
+static int gauge_rounds[2]={6,6};
+bool xr_magazine_gauges(int& right,int& left){right=gauge_rounds[0];left=gauge_rounds[1];return gauges;}
+static bool health_visible=false;
+static int health_current=3,gauge_health_maximum=5;
+bool xr_health_gauge(int& current,int& maximum){current=health_current;maximum=gauge_health_maximum;return health_visible;}
+bool xr_ammo_gauge_vertex(unsigned eye,float x,float y,float& out_x,float& out_y){out_x=(x+1)*.5f+(eye?-.008f:.008f);out_y=(y+1)*.5f;return true;}
 #include "eye_targets.inl"
 struct TL {float x,y,z,rhw;DWORD color;};
 static void native_quad(IDirect3DDevice7* device,float z,DWORD color){
@@ -137,6 +153,89 @@ int wmain(int argc,wchar_t** argv){
         printf("GPU angles pitch=%.3f yaw=%.3f roll=%.3f opaque=%u nearest_face_samples=%u mismatches=%u\n",pitch,yaw,roll,opaque,compared,mismatches);
         require(opaque>30&&compared>20,"solid pistol visible from both eyes at this angle");
         require(mismatches==0,"actual GPU faces agree with closest surface, without see-through parts");
+    }
+    for(bool shown:{false,true}){
+        cursor_visible=shown;require(SUCCEEDED(device->BeginScene()),"begin cursor visibility GPU scene");
+        {SavedGameState saved(device,false,log_line,"test_cursor_clear");require(saved.bind(eye_atlas),"bind cursor test atlas");
+         require(SUCCEEDED(device->Clear(0,nullptr,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xff123456,1,0)),"clear cursor test atlas");}
+        draw_controller_aid(device);require(SUCCEEDED(device->EndScene()),"end cursor visibility GPU scene");
+        auto atlas=pixels(eye_atlas),layer=pixels(gun_layer);unsigned green=0,solid=0;
+        for(unsigned eye=0;eye<2;++eye)for(unsigned y=35;y<46;++y)for(unsigned x=355;x<366;++x)
+            if((atlas[y*800+eye*400+x]&0xffffff)==0x00ff40)++green;
+        for(auto pixel:layer)if((pixel>>24)>250)++solid;
+        require(shown?green>0:green==0,"actual GPU dot respects cursor visibility");
+        require(solid>30,"gun remains visible in both cursor modes");
+    }
+    dual_wield=true;yaw=pitch=roll=0;
+    for(bool shown:{false,true}){
+        cursor_visible=shown;require(SUCCEEDED(device->BeginScene()),"begin two-gun GPU scene");
+        {SavedGameState saved(device,false,log_line,"test_dual_clear");require(saved.bind(eye_atlas),"bind dual test atlas");require(SUCCEEDED(device->Clear(0,nullptr,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xff123456,1,0)),"clear dual test atlas");}
+        draw_controller_aid(device);require(SUCCEEDED(device->EndScene()),"end two-gun GPU scene");
+        auto atlas=pixels(eye_atlas),layer=pixels(gun_layer);
+        for(unsigned eye=0;eye<2;++eye){
+            unsigned left_solid=0,right_solid=0,cyan=0,green=0;
+            for(unsigned y=10;y<390;++y)for(unsigned x=0;x<400;++x){auto pixel=layer[y*800+eye*400+x];if((pixel>>24)>250){if(x<140)++left_solid;else ++right_solid;}}
+            for(unsigned y=35;y<46;++y)for(unsigned x=35;x<46;++x)if((atlas[y*800+eye*400+x]&0xffffff)==0x00c8ff)++cyan;
+            for(unsigned y=35;y<46;++y)for(unsigned x=355;x<366;++x)if((atlas[y*800+eye*400+x]&0xffffff)==0x00ff40)++green;
+            require(left_solid>30&&right_solid>30,"actual GPU shows independent left and right pistols in each eye");
+            require(shown?(cyan>0&&green>0):(cyan==0&&green==0),"cursor toggle controls both hand markers on actual GPU");
+        }
+    }
+    // Production gauge artwork and production pass on the actual D3D7 backend.
+    // Sample every bullet's interior in both eyes, including empty/full/asymmetric
+    // clips and visibility preference. Cursor is intentionally off throughout.
+    cursor_visible=false;
+    for(bool shown:{false,true})for(int rounds:{0,1,2,3,4,5,6}){
+        gauges=shown;gauge_rounds[0]=rounds;gauge_rounds[1]=6-rounds;
+        require(SUCCEEDED(device->BeginScene()),"begin gauge GPU scene");
+        {SavedGameState saved(device,false,log_line,"gauge_test_clear");require(saved.bind(eye_atlas),"bind gauge atlas");
+         require(SUCCEEDED(device->Clear(0,nullptr,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xff123456,1,0)),"clear gauge atlas");}
+        device->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,FALSE);
+        draw_controller_aid(device);
+        DWORD blend=99;device->GetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE,&blend);require(blend==FALSE,"gauge alpha state restored");
+        D3DVIEWPORT7 restored={};device->GetViewport(&restored);require(memcmp(&restored,&native,sizeof(native))==0,"gauge viewport restored");
+        require(SUCCEEDED(device->EndScene()),"end gauge GPU scene");auto atlas=pixels(eye_atlas);
+        for(unsigned eye=0;eye<2;++eye)for(unsigned hand=0;hand<2;++hand){
+            int n=gauge_rounds[hand];DWORD accent=n?(hand?0x00c8ff:0x00ff40):0xff7040;
+            for(int slot=0;slot<6;++slot){
+                float px=0,py=0;xr_ammo_gauge_vertex(eye,(hand?-.75f:.43f)+.0875f+slot*.038f,.43f+.085f,px,py);
+                auto pixel=atlas[static_cast<unsigned>(py*400+.5f)*800+eye*400+static_cast<unsigned>(px*400+.5f)]&0xffffff;
+                require(pixel==(shown?(slot<n?accent:0x394654):0x123456),"GPU bullet count/hand mapping matches native published rounds");
+            }
+            if(shown){
+                const unsigned masks[]={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d};
+                const float centers[7][2]={{.016f,.0025f},{.0295f,.014f},{.0295f,.041f},{.016f,.0535f},{.0025f,.041f},{.0025f,.014f},{.016f,.0275f}};
+                for(unsigned s=0;s<7;++s){float px=0,py=0;
+                    xr_ammo_gauge_vertex(eye,(hand?-.75f:.43f)+.015f+centers[s][0],.43f+.058f+centers[s][1],px,py);
+                    auto pixel=atlas[static_cast<unsigned>(py*400+.5f)*800+eye*400+static_cast<unsigned>(px*400+.5f)]&0xffffff;
+                    // At the minimum 400px eye size these strokes are one pixel
+                    // wide. MSAA gives partial coverage; test lit vs unlit rather
+                    // than demanding an unblended full-coverage colour.
+                    const unsigned channel=n?(hand?0u:8u):16u;
+                    bool lit=((pixel>>channel)&255)>110;
+                    if(lit!=((masks[n]&(1u<<s))!=0))printf("glyph eye=%u hand=%u rounds=%d segment=%u pixel=%06lx xy=%.3f,%.3f\n",eye,hand,n,s,pixel,px*400,py*400);
+                    require(lit==((masks[n]&(1u<<s))!=0),"actual GPU numeric gauge glyph agrees with count zero through six");
+                }
+            }
+        }
+    }
+    gauges=true;health_visible=true;cursor_visible=false;
+    for(int maximum:{3,5,9})for(int current=0;current<=maximum;++current){
+        gauge_health_maximum=maximum;health_current=current;
+        require(SUCCEEDED(device->BeginScene()),"begin health meter GPU scene");
+        {SavedGameState saved(device,false,log_line,"health_test_clear");require(saved.bind(eye_atlas),"bind health atlas");
+         require(SUCCEEDED(device->Clear(0,nullptr,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xff123456,1,0)),"clear health atlas");}
+        draw_controller_aid(device);require(SUCCEEDED(device->EndScene()),"end health meter GPU scene");auto atlas=pixels(eye_atlas);
+        DWORD color=current<=1?0xff7040:current*2<=maximum?0xffc04d:0x58e89a;
+        for(unsigned eye=0;eye<2;++eye){
+            for(int slot=0;slot<maximum;++slot){float x=0,y=0;
+                xr_ammo_gauge_vertex(eye,-.75f+.109f+(slot+.5f)*.195f/maximum-.002f,.315f+.0525f,x,y);
+                auto pixel=atlas[static_cast<unsigned>(y*400+.5f)*800+eye*400+static_cast<unsigned>(x*400+.5f)]&0xffffff;
+                require(pixel==(slot<current?color:0x394654),"GPU health cells agree with native current/capacity in both eyes");
+            }
+            float x=0,y=0;xr_ammo_gauge_vertex(eye,.43f+.15f,.315f+.05f,x,y);
+            require((atlas[static_cast<unsigned>(y*400+.5f)*800+eye*400+static_cast<unsigned>(x*400+.5f)]&0xffffff)==0x123456,"shared health panel appears only above left ammo, not above right");
+        }
     }
     gun_layer->Release();eye_atlas->Release();device->Release();d3d->Release();desktop->Release();draw->Release();DestroyWindow(window);FreeLibrary(module);
     printf("PASS %u actual GPU gun render checks\n",checks);return 0;

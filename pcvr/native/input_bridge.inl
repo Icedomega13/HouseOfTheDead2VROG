@@ -17,6 +17,7 @@ static BOOL WINAPI vr_cursor(LPPOINT point) {
         static unsigned samples=0;
         if(samples++<3) log_line("INPUT tracked_cursor logical=(%.1f,%.1f) window=%p",input.x,input.y,input_game_window);
         RECT rect={};GetClientRect(input_game_window,&rect);
+        xr_native_cursor_poll();
         point->x=static_cast<LONG>(input.x*(rect.right-rect.left)/640);
         point->y=static_cast<LONG>(input.y*(rect.bottom-rect.top)/480);
         return ClientToScreen(input_game_window,point);
@@ -50,6 +51,7 @@ static HRESULT WINAPI vr_input_state(void* object,DWORD size,LPVOID data) {
     if(!mouse&&!keyboard) return hr;
     if(FAILED(hr)) memset(data,0,size);
     if(mouse) {
+        xr_native_mouse_poll();
         auto state=static_cast<DIMOUSESTATE*>(data);
         if(input.aim_valid) {state->lX=0;state->lY=0;state->rgbButtons[0]=input.fire?0x80:0;}
         state->rgbButtons[1]=input.reload?0x80:0;

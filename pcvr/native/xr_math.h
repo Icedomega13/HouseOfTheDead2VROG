@@ -82,6 +82,38 @@ inline bool unit_depth_plane(DirectX::FXMMATRIX camera,const void* vertices,size
     }
     return true;
 }
+inline bool near_screen_effect(DirectX::FXMMATRIX world,DirectX::CXMMATRIX view,const void* vertices,size_t count) {
+    // Native shot flame/glow: a small rotated model at WORLD Z=-1 with the
+    // fixed reflected screen VIEW. Its vertices are not all at camera Z=1,
+    // so unit_depth_plane deliberately does not classify it as a flat bar.
+    // Match this transform as well as finite unit-depth bounds; nearby level
+    // geometry and actual world blood/projectiles must retain their depth.
+    using namespace DirectX;
+    if(!vertices||count!=4) return false;
+    XMFLOAT4X4 w,v;XMStoreFloat4x4(&w,world);XMStoreFloat4x4(&v,view);
+    for(unsigned row=0;row<4;++row)for(unsigned col=0;col<4;++col) {
+        float expected=row==col?(row==2?-1.0f:1.0f):0.0f;
+        if(!std::isfinite(w.m[row][col])||!std::isfinite(v.m[row][col])||std::fabs(v.m[row][col]-expected)>.0001f) return false;
+    }
+    if(std::fabs(w._43+1)>.0001f||std::fabs(w._44-1)>.0001f||
+        std::fabs(w._14)>.0001f||std::fabs(w._24)>.0001f||std::fabs(w._34)>.0001f) return false;
+    float scale=XMVectorGetX(XMVector3Length(world.r[0]));
+    if(scale<.001f||scale>.2f) return false;
+    for(unsigned row=0;row<3;++row) {
+        if(std::fabs(XMVectorGetX(XMVector3Length(world.r[row]))-scale)>.0001f) return false;
+        for(unsigned other=row+1;other<3;++other)
+            if(std::fabs(XMVectorGetX(XMVector3Dot(world.r[row],world.r[other])))>.0001f) return false;
+    }
+    auto camera=world*view;
+    for(size_t i=0;i<count;++i) {
+        XMFLOAT3 point;std::memcpy(&point,static_cast<const char*>(vertices)+i*32,sizeof(point));
+        auto p=XMVector3TransformCoord(XMLoadFloat3(&point),camera);
+        float x=XMVectorGetX(p),y=XMVectorGetY(p),z=XMVectorGetZ(p);
+        if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(z)||
+            std::fabs(x)>.6f||std::fabs(y)>.6f||z<.75f||z>1.25f) return false;
+    }
+    return true;
+}
 inline bool cinematic_bar(DirectX::FXMMATRIX camera,const void* vertices,size_t count) {
     // Observed native letterbox: X +/-0.515, Z=1, height .10. It slides
     // from Y .30.. .40 to .40.. .50 around dialogue/area transitions.

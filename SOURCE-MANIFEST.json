@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "release": "v0.1.0-alpha.18",
-  "probe_version": 18,
+  "release": "v0.3.0-alpha.28",
+  "probe_version": 28,
   "files": [
     {
       "path": "README.md",
-      "sha256": "421e1a46c1a59b3183adc3f5920c41644e9c5db0fbaad43037ed74e3d9d42dfe"
+      "sha256": "fc817708c7e61502b415ec47a307cf0adcb1076ef068918802d373613e36e5fb"
     },
     {
       "path": "LICENSE",
@@ -16,24 +16,40 @@
       "sha256": "b2915d832c8bd42407a64fb18c0d578c106b7310f3dfe0a092c19b396332ed32"
     },
     {
+      "path": ".gitattributes",
+      "sha256": "4a3de6ec248ab0f626ae70b9e8f9ad7b4ce0df8f0e07b8c4a760b8714a9a264a"
+    },
+    {
       "path": "THIRD_PARTY.md",
       "sha256": "cb6e25b0c8c3283e1f2de2c746ec440da4ea169636fa155f3621a8d9c37c7f54"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "f2d17eeb3fea5a50ec65c6046b7883a1777e025071d8535ba3fba224ce335158"
+      "sha256": "90f02d05cd3c918dcb7665eb69fcf3ff0c480c2d35b2edcc8fcf335735e74c84"
     },
     {
       "path": "CONTRIBUTING.md",
       "sha256": "163b43a78ccce23408c56d65e213e9af7369b8ee7bc4dfd842a5537f3227df89"
     },
     {
+      "path": "ROADMAP.md",
+      "sha256": "beef1b72c6f19d012ff8e6d7059554703e2b00617fb634e0aaab5666e5328b4d"
+    },
+    {
+      "path": "INSTALL.md",
+      "sha256": "8ddf5edb0fe5c39950b6c61f30212971b6de7d522225136b2930e78ce2a838eb"
+    },
+    {
       "path": ".github/workflows/build.yml",
-      "sha256": "fe77ad0367dd401d8ef993eb863f06dd281b8199dc748db480565c6459fc387f"
+      "sha256": "5e8d5bd84beba685f8bc0c12e1d0bb7583c579eba89148f945d865f88d898955"
+    },
+    {
+      "path": "pcvr/native/ammo_gauge.h",
+      "sha256": "bf5f8415f7c228d81aa68d4ad16a338b427e33fc0fc16b8dc617cd8de99d13e3"
     },
     {
       "path": "pcvr/native/com_trace.inl",
-      "sha256": "3f643df662ba781029be58fb301c282e99b69babb0e3809029620740fb084420"
+      "sha256": "8cf6dc07cc197ee02f7386a7a3fab8a96bbae49de7dd9b01a0a891af850ead01"
     },
     {
       "path": "pcvr/native/ddraw_forwarders.inl",
@@ -41,15 +57,19 @@
     },
     {
       "path": "pcvr/native/ddraw_probe.cpp",
-      "sha256": "d3b34fb18bd26f165d4d8d7eebaded4b99b127441af3652d1d983619382f519b"
+      "sha256": "a476fa87f90bf5868a4acb95a5b16ff72da2f0ece7f9008fe48d3e88b3b2e5e3"
     },
     {
       "path": "pcvr/native/ddraw_probe.def",
       "sha256": "540d3f176e286fce605ccdb2ff65106db22e1ba3874214bff135aa9e5ec5fa91"
     },
     {
+      "path": "pcvr/native/dual_wield.h",
+      "sha256": "35c092d254472bcea252f32b85471c8a5f92bcea19cc3a35ad387e51201cf536"
+    },
+    {
       "path": "pcvr/native/eye_targets.inl",
-      "sha256": "3d9d72ed34838550bce885f9649a7627c0c73b22cd21d96205e35b59fca70c81"
+      "sha256": "9522ebfa2d3b68d7cd0fde363c1c6a6fb89eb337404dd69b9c0b380e06d83efe"
     },
     {
       "path": "pcvr/native/frame_capture.inl",
@@ -57,43 +77,75 @@
     },
     {
       "path": "pcvr/native/gun_render_tests.cpp",
-      "sha256": "50e53b7c3f70c4b69ef901115b23736b7b4f5f1495f49f94f0c39e3cacdbbbb3"
+      "sha256": "45cdbb3063c03a825e9c2bf995bad3139e5cdc2a6159582a770e7ae94a527524"
     },
     {
-      "path": "pcvr/native/input_bridge_tests.cpp",
-      "sha256": "3570580770669c93a1625449e6399b47ec27c39316434a626984db093852a342"
+      "path": "pcvr/native/hud_cache_tests.cpp",
+      "sha256": "5cb54e1f34dafe55d722de321ed3651ecc50823a7e2098404963aa828231131a"
+    },
+    {
+      "path": "pcvr/native/hud_prompt.h",
+      "sha256": "d48cdab48d6e8db0338740c83f452ca24dd1c165301be80b7f6cbe62d9375b5f"
+    },
+    {
+      "path": "pcvr/native/hud_prompt.inl",
+      "sha256": "1524527ea7c3b92ef299f5d72e6b0660c060ded1f1682c32c8c725c5db1b5425"
+    },
+    {
+      "path": "pcvr/native/hud_prompt_tests.cpp",
+      "sha256": "4a9e7b0dea30894caaca40406fba1eefad1afaebb143901c88aad223c020c3f8"
+    },
+    {
+      "path": "pcvr/native/independent_magazines.h",
+      "sha256": "b19e1a108c2f0f641139c8fcc3d99837bb342b5d0aa7abbdafbf17db9f8cdaae"
     },
     {
       "path": "pcvr/native/input_bridge.inl",
-      "sha256": "79be03b062f10eb92d73877391f8eb380379ff2757357c6e0afbfd45a2d1319a"
+      "sha256": "6d1e68bb713a04370d57c9845761992746d02830728481f64799132fb7e26261"
     },
     {
-      "path": "pcvr/native/pistol_mesh_tests.cpp",
-      "sha256": "8959f080edafa6ce2e030ed2239411d8d23a129535afeb59a81800313a99a986"
+      "path": "pcvr/native/input_bridge_tests.cpp",
+      "sha256": "f9d2ad25302c0e1ac6cfb8aa8b360775e6922d771298c9050b27fecd4c465c90"
+    },
+    {
+      "path": "pcvr/native/native_ammo.inl",
+      "sha256": "71f768f6f0c890a0193c5d58e362f125a5b59112c5f6efc79a20913d659b7cb2"
+    },
+    {
+      "path": "pcvr/native/native_ammo_tests.cpp",
+      "sha256": "bb24bd424a38529eaea26f530397346187fdeef738778f378220841d88263b00"
+    },
+    {
+      "path": "pcvr/native/native_status.inl",
+      "sha256": "87133288bc933a8f5e3593db43ad667f2bccc3cc7826a3dbc6ed92273506353d"
     },
     {
       "path": "pcvr/native/pistol_mesh.h",
       "sha256": "390a5a5f1c374ab7992b9099c445f8b6801cf549e6b59133f5de05dbd237f875"
     },
     {
-      "path": "pcvr/native/probe_smoke.cpp",
-      "sha256": "cd562fb9b1066534a561a05a88d642896f47dd0391f19020b4f684939fcc1f14"
+      "path": "pcvr/native/pistol_mesh_tests.cpp",
+      "sha256": "8959f080edafa6ce2e030ed2239411d8d23a129535afeb59a81800313a99a986"
     },
     {
-      "path": "pcvr/native/reload_gesture_tests.cpp",
-      "sha256": "961e8b884e89adbd680b638d06acad14c85bc0bcacf1aefe27a0693a96afe3f8"
+      "path": "pcvr/native/probe_smoke.cpp",
+      "sha256": "cd562fb9b1066534a561a05a88d642896f47dd0391f19020b4f684939fcc1f14"
     },
     {
       "path": "pcvr/native/reload_gesture.h",
       "sha256": "b756963142b36df4c8270fd7432f25d7d3079d59f4564aa7442e1df54203dbec"
     },
     {
-      "path": "pcvr/native/render_state_tests.cpp",
-      "sha256": "905d90835dad372c682defb5ce4602979f1741131687f7bbf8a169d525c60a7d"
+      "path": "pcvr/native/reload_gesture_tests.cpp",
+      "sha256": "961e8b884e89adbd680b638d06acad14c85bc0bcacf1aefe27a0693a96afe3f8"
     },
     {
       "path": "pcvr/native/render_state.h",
       "sha256": "5fd7d4658c9894d7bc9848182f9f68c40da4930d31f8c8370c00d8e40d618d08"
+    },
+    {
+      "path": "pcvr/native/render_state_tests.cpp",
+      "sha256": "905d90835dad372c682defb5ce4602979f1741131687f7bbf8a169d525c60a7d"
     },
     {
       "path": "pcvr/native/startup_trace.cpp",
@@ -101,19 +153,19 @@
     },
     {
       "path": "pcvr/native/stereo_preview.inl",
-      "sha256": "7d4ceee8dc7a27cc5b7c178150b8f26064f3d168adf99bd418220e3171d6b9ec"
-    },
-    {
-      "path": "pcvr/native/texture_image_tests.cpp",
-      "sha256": "28c464218862b4a145855d669b0281899738893a6825d3ef209bb2097f54ea21"
+      "sha256": "c4f27d57aee919367f00fa694e023ae23a08361d653b8a197a8937c74ca6bc75"
     },
     {
       "path": "pcvr/native/texture_images.h",
       "sha256": "4eafb733ce3db282638373d34b7be500a253eda073855effc5dd701c854eac07"
     },
     {
+      "path": "pcvr/native/texture_image_tests.cpp",
+      "sha256": "28c464218862b4a145855d669b0281899738893a6825d3ef209bb2097f54ea21"
+    },
+    {
       "path": "pcvr/native/texture_pack.inl",
-      "sha256": "4f48076687f32bfb9e157826c9e39b1c03db6f5857420f47350ad52ba48cb1e9"
+      "sha256": "d4109633b3b304de9b86530150f15b57a0d28b2d1b247aea9843a12e06fbae20"
     },
     {
       "path": "pcvr/native/timing_research.inl",
@@ -124,32 +176,32 @@
       "sha256": "e658a1c7bfc139c092370ee478bd3fab178a5de9743462fb68f37ed239ecb36e"
     },
     {
-      "path": "pcvr/native/xr_bridge_tests.cpp",
-      "sha256": "e087b6f42fd1a4807af01fc5b536a69429fe815812b326c30fda6973242dff4d"
-    },
-    {
       "path": "pcvr/native/xr_bridge.cpp",
-      "sha256": "3e4a4a67095eabc1103eadf7e65341fc55e9d303d9bf6654fd4c6a89175a66f0"
+      "sha256": "fd0b63936cf00880a366b32ffb6e2f6ee6685ae76dba80f93c6b815a92eba1b5"
     },
     {
       "path": "pcvr/native/xr_bridge.h",
-      "sha256": "afe25035d51c3a268c460fa9087334c9e5a82074a0ce42a22ed13fc23841c383"
+      "sha256": "3d453e1c6d5f8f461c8926bcce993d1b28a9b9844316eedfb21becc2959d47a0"
     },
     {
-      "path": "pcvr/native/xr_math_tests.cpp",
-      "sha256": "30a5b29881ef68b78a941f3ba5bd7d90452a3892e0103f005248b976945bece4"
+      "path": "pcvr/native/xr_bridge_tests.cpp",
+      "sha256": "bfd01eef8c092e4f59fa9b5c9ca004105440552a0b1454ae8904dda17f6c50f6"
     },
     {
       "path": "pcvr/native/xr_math.h",
-      "sha256": "7331370e8e93b2afc5d997049d7a1a0b425636a5d0fd8a405e4c3bfa1f458b80"
+      "sha256": "8fc7da90bb5406ce98bb960fdbf1babd6beb531774a4529d1683c0eca6528764"
     },
     {
-      "path": "pcvr/native/xr_pixels_tests.cpp",
-      "sha256": "88350d35c0beb8ad49828b6440c9703d9b5d56859b3c31977158adc54dd261ab"
+      "path": "pcvr/native/xr_math_tests.cpp",
+      "sha256": "f804047ab99e55acde7e389648409c5d72e5139e308b3effd5d3e80f2152abb5"
     },
     {
       "path": "pcvr/native/xr_pixels.h",
       "sha256": "390f4e285ce0f1dfd4db434faf9054c2ea55e8cb745f7ca2574d8e6031a130e5"
+    },
+    {
+      "path": "pcvr/native/xr_pixels_tests.cpp",
+      "sha256": "88350d35c0beb8ad49828b6440c9703d9b5d56859b3c31977158adc54dd261ab"
     },
     {
       "path": "pcvr/native/xr_probe.cpp",
@@ -173,7 +225,7 @@
     },
     {
       "path": "pcvr/build.cmd",
-      "sha256": "3c992e5aa58f08aa4b9d40456a5a1afad08b4c5e4c2191af7a18b57cb70ada9c"
+      "sha256": "78ab894a45c9c4fe099eb1e2982ce03afc2e134ebd1d2bb748e80ba46ba5b1b2"
     },
     {
       "path": "pcvr/build-replay.cmd",
@@ -197,7 +249,7 @@
     },
     {
       "path": "pcvr/run-probe.ps1",
-      "sha256": "24d1bd6e0de029c9e180fd1bdbc954e6984e6b4b9c20f28f11801c38afd4abe7"
+      "sha256": "42d901b0ccbdbdd2e4aaf836755e9dee750264770484661afb6c63b564e2d92b"
     },
     {
       "path": "pcvr/graphics-quality.ps1",
@@ -205,15 +257,15 @@
     },
     {
       "path": "pcvr/save-session.ps1",
-      "sha256": "eed63e75c58a4ae6d14d7cdcb3664fb4f3b23abd09e16eba14cb4c9734a5d92c"
+      "sha256": "fae35f49b9387ca08e8def37482f9c9dbdb5a4ba91814e961247576b712f3527"
     },
     {
       "path": "pcvr/test-source.ps1",
-      "sha256": "2b1c11c24585d3db2390311e353967f0b638bd81cf274252a97e126f33a14369"
+      "sha256": "cdaabd2430e187d5b449698384ddbaaab8b48aa8e3178fc3dcfd9e3169a1419d"
     },
     {
       "path": "pcvr/test-replay.ps1",
-      "sha256": "d435f9b9317f5b5c9a8635db7c1218e7d1aab8c048bb883d73e50653a39ff469"
+      "sha256": "bc06341b99407cf407b6dc77cc257fd52cddb166d71b8e199ecae054e76b690f"
     },
     {
       "path": "pcvr/check-startup.ps1",
@@ -221,7 +273,7 @@
     },
     {
       "path": "pcvr/vr-settings.json",
-      "sha256": "5e5743c5ba47f2efef693db2a89c5541566870854f4313584bb87fc2eb64ce91"
+      "sha256": "9e4849cf46c5f4a57fec4fd3f600547e337aae8149276d44d2ddf32a5423e6bb"
     },
     {
       "path": "pcvr/play-source-vr.cmd",
@@ -240,12 +292,40 @@
       "sha256": "2fdfc38ab982517751af0595bfeaa2eea1f242c79926fbd501aabd3d4c50102d"
     },
     {
-      "path": ".gitattributes",
-      "sha256": "4a3de6ec248ab0f626ae70b9e8f9ad7b4ce0df8f0e07b8c4a760b8714a9a264a"
+      "path": "pcvr/build-installer.ps1",
+      "sha256": "cde33cc541908efb2686ff8c4101a5f269f52934e9b04530c069107240a43fb7"
     },
     {
-      "path": "ROADMAP.md",
-      "sha256": "b56bd2af6210011baac0f3bd265416e3dcb2fc6caf1448fd1259399529a971b0"
+      "path": "pcvr/test-installer.ps1",
+      "sha256": "2f0ef6eb40dd16898237479ef91730d02a7af04f82f0a35b7183d6c2ce9dbd3a"
+    },
+    {
+      "path": "pcvr/test-launcher-profile.ps1",
+      "sha256": "d29c7a48660174be9bd5405910cb11cccb53d5c391ae34e5e62e51c72987e2d7"
+    },
+    {
+      "path": "pcvr/installer/InstallerCore.cs",
+      "sha256": "e3252e1f55a5a790308b4afa1db9b97cd3edafeb6915174c39b3d8cb5ebee806"
+    },
+    {
+      "path": "pcvr/installer/DiscImport.cs",
+      "sha256": "eb1f2a703d6449141d9e4a19b6d045cb017028bb4d9841148c342d52702ae442"
+    },
+    {
+      "path": "pcvr/installer/InstallerTests.cs",
+      "sha256": "adb053d8ed67d4fc449392af6f29424056af9e282672464964e0c73ab9bc60ce"
+    },
+    {
+      "path": "pcvr/installer/Setup.cs",
+      "sha256": "71e6e5256242b1bce55be47fda412c5419c16106ba91a2752ef9d61e7a9329cb"
+    },
+    {
+      "path": "pcvr/installer/AssemblyInfo.cs",
+      "sha256": "2c171aa93b397842c4c70b62ac9d2ebc964f97a076fec6eda3541a4c69cf9cae"
+    },
+    {
+      "path": "pcvr/installer/setup.manifest",
+      "sha256": "6d5b25ff02df711130ad628787087a5b34929ecd59fe415e7594f1c78ba94543"
     }
   ]
 }

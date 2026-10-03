@@ -1,5 +1,109 @@
 # Changelog
 
+## v0.3.0-alpha.28 — dual guns and floating status HUD
+
+- Two controller-aimed guns with separate six-round arcade magazines. Lower one
+  gun to reload only that hand; B reloads both. Shared health/lives/credits and
+  serialized native shots preserve the original single-player game logic.
+- Floating stereo ammo panels on both sides, with shared health neatly above the
+  left panel. Hide verified native 1P/candle/cartridge sprites only in VR, while
+  preserving reload warnings, audio, dialogue, continue prompts and desktop HUD.
+- Aiming dots off on fresh installs; left Y toggles them. Stronger default haptics
+  remain adjustable input acknowledgements. Retain native reload sounds/voice and
+  each hand's empty-magazine prompt timing.
+- Installer retains direct ZIP/IMG/ISO import and adds missing new settings during
+  updates while preserving explicit preferences, saves and rollback backups.
+- Packages the exact headset-tested probe-28 production DLL. No original game,
+  private HD texture sample or third-party binaries are embedded.
+- 2,209 local mod checks, native combat replay, 85 installer lifecycle checks and
+  six launcher profile checks pass. The maintainer approved the headset play-test;
+  full campaign and broader PC/headset/runtime coverage remain pending.
+
+## v0.2.1-alpha.23 — direct disc-download setup
+
+- Select the downloaded Windows disc-image ZIP directly. Setup extracts the game,
+  converts the CloneCD MODE1/2352 IMG to ISO and uses that disc automatically at
+  launch. No manual unpacking, disc tools or original flatscreen installation.
+- Also accept loose IMG/ISO; retain the existing installed-folder option. Read
+  MSI metadata without executing installer actions, and extract only mapped game
+  files through Windows cabinet APIs. Original downloads/files remain untouched.
+- Preserve the imported ISO on updates/removal; reuse the existing game on update.
+- 79 automated archive/disc/cabinet and installer lifecycle checks passed. All
+  2,047 real imported game files and the converted ISO match the working copy by
+  SHA-256; the installed DirectDraw/Direct3D stack passes its local smoke check.
+- Exact accepted probe-23 mod retained. No game files or disc image in the release.
+  New-user PCs and physical headset startup still need community testing.
+
+## v0.2.0-alpha.23 — community installer alpha
+
+- Prebuilt Windows setup: select the original PC game, create a separate copy,
+  download checksum-verified dependencies and create a Play shortcut/removal entry.
+- Optional original ISO and game-files help link. No game files, disc images,
+  private HD artwork or third-party runtime binaries are embedded in setup.
+- Back up replaced mod files before updates, retain preferences/saves, recover
+  failed replacements, and remove only recognized mod files during uninstall.
+- 46 installer lifecycle checks passed, plus an isolated installation of the
+  real payload and DirectDraw/Direct3D graphics-stack smoke test. Fresh-PC and
+  broader community hardware testing remain pending. The setup EXE is unsigned.
+- The maintainer reported a successful physical version-23 play-test.
+
+- Left Y toggles the green aiming dot and observed native red crosshair in the
+  headset. Gun, shooting, desktop output and ammo placement stay unchanged.
+- One change per press, with release required after inactive/failed input;
+  preserve session visibility through focus loss. Existing X/A/B bindings remain.
+- `AimingCursor` boolean defaults to true and controls launch preference; the
+  runtime toggle stays in memory for the session.
+- 857 local checks passed, including actual GPU gun/dot visibility comparisons.
+  Native replay uses the same toggle helper; broader hardware coverage is pending.
+
+### Version 22 changes retained
+
+- Fix the credit value that still flashed in version 21's physical test. Match
+  the captured five directly in the native credit slots; cache other stable
+  count glyphs after a freshly recognized credit row authenticates them.
+- Recognized counts no longer depend on their label appearing every frame.
+  Shared-font draws outside the count slots stay native. Changed or unreadable
+  sources cannot become cached count identities.
+- 812 local checks passed, including 34 HUD and 14 mocked production-cache
+  checks. A standalone fixture fails on version 21 and passes on version 22.
+  Physical verification of this correction remains pending.
+
+### Version 21 changes retained
+
+- Hide the observed English player-two join invitation, credit label and count
+  from the headset. Match exact bitmap content and footer geometry; retain
+  original desktop drawing and ammo placement.
+- Optional `HideUnusedPlayerTwo` boolean defaults to true; false restores the
+  native footer. Bounded source caching avoids repeated texture readbacks.
+- Freshly recognize other count glyphs using a row association expiring after
+  one following presentation; unrecognized count graphics stay native until
+  authenticated. The known five is covered even before its first label.
+- Physical HUD verification and broader menu/campaign coverage remain pending.
+
+### Version 20 changes retained
+
+- Recognize the observed rotated native near-screen shot flame/glow quads and
+  give them the existing two-metre HUD-distance eye pass. Previously they stayed
+  around one game unit (10 cm), amplifying head movement and eye separation.
+- Preserve native desktop drawing and ordinary world-particle depth. Captured
+  transform fixtures and moving-head bridge checks cover the regression.
+- Physical testing of the shot-flash correction is pending.
+
+### Version 19 changes retained
+
+- Adjustable `HapticStrength` from 0 to 200 percent; 100 preserves prior feel.
+- Request cancellation of submitted vibration on tracking/focus/input loss,
+  invalid origin, disable/zero strength and XR lifecycle failure.
+- Handle positive not-focused statuses without claiming a pulse was delivered.
+- Reload pattern takes priority when trigger and reload have simultaneous edges.
+- Bound impact traces with cached content keys, UVs and tint; replay traces
+  distinguish cached same-size textures.
+- 734 local regression checks and a separate 60-second native replay passed.
+
+Physical feedback is pending. Haptics acknowledge input, not native ammo, hit or
+damage events. Published `v0.1.0-alpha.18` and the local playable fallback remain
+preserved; the candidate is a development change, not a 1.0 release.
+
 ## v0.1.0-alpha.18 — 2026-10-01
 
 First public, source-only alpha of the original Windows game's OpenXR PCVR mod.

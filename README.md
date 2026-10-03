@@ -8,9 +8,9 @@ logic and intercepts DirectDraw / Direct3D 7 rendering to produce tracked stereo
 views and controller input. It is a PCVR mod, not a standalone Quest application
 or a rebuild of the game's proprietary source.
 
-**Community installer alpha: v0.2.1-alpha.23 (probe 23).** Download the
-[Windows setup EXE](https://github.com/Icedomega13/HouseOfTheDead2VROG/releases/tag/v0.2.1-alpha.23)
-and follow [installation help](https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.1-alpha.23/INSTALL.md). Select the Windows PC disc-image ZIP
+**Latest community installer alpha: v0.3.0-alpha.28 (probe 28).** Download the
+[Windows setup EXE](https://github.com/Icedomega13/HouseOfTheDead2VROG/releases/tag/v0.3.0-alpha.28)
+and follow [installation help](INSTALL.md). Select the Windows PC disc-image ZIP
 you downloaded; setup prepares your VR game copy and disc automatically. No unzip
 or original flatscreen installation is needed. IMG/ISO and existing game folders
 also work. Setup downloads verified dependencies and creates a launcher. No game
@@ -19,36 +19,43 @@ The earlier source-only `v0.1.0-alpha.18` remains available as a separate tag.
 
 ## Quick start for players
 
-1. Download **HotD2VR-Setup-0.2.1-alpha.23.exe** from the release above.
+1. Download **HotD2VR-Setup-0.3.0-alpha.28.exe** from the release above.
 2. Select your original Windows game's downloaded **disc-image ZIP as-is**, choose
    a destination with at least 3 GB free, then click **Install / update**. Setup
    extracts the game and prepares its disc automatically; no flatscreen install.
 3. Connect your Quest through Virtual Desktop, select **VDXR** in Streamer, then
    launch **Play HotD2VR** from the desktop. No compiler or SDK is needed.
 
-Prefer aiming with the gun alone? Press **Y on the left controller** to hide both
-the green aiming dot and native red crosshair. Press Y again to restore them.
-The gun and shooting remain active. Ammo stays in its original position.
+**Dual wielding is included:** six rounds per gun in arcade mode, one shared
+player health meter, and floating ammo panels on both sides. Health stacks above
+the left ammo panel. The original redundant ammo/health sprites and unused
+player-two invitation are hidden in the headset view.
 
-See [complete installer help](https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.1-alpha.23/INSTALL.md)
+Aiming dots start **off** for gun-only aiming. Press **Y on the left controller**
+to restore both markers, then Y again to hide them. Shooting remains active.
+Lower one gun to reload only that gun; right **B** reloads both.
+
+See [complete installer help](https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.3.0-alpha.28/INSTALL.md)
 for supported downloads, updates, rollback, removal and troubleshooting. The setup
-EXE is unsigned; its release includes checksums. Game files and an HD texture pack
-are not included.
+EXE is unsigned and includes checksums. Game files and an HD texture pack are not
+included. Existing installations keep saved preferences; missing new feature
+settings are added automatically. Earlier alpha installers remain available.
 
-The community installer uses **probe 23**, adding a left-Y toggle
-for both headset aiming markers. It also hides the observed
-unused player-two join/credit footer in the headset while keeping ammo in place.
-It retains probe 20's near-screen shot-flash correction and probe 19's
-adjustable vibration and cancellation requests on focus/tracking loss. The
-maintainer reported a successful version-23 headset play-test. Installer setup
-on fresh community PCs and broader campaign/hardware coverage remain pending.
+The maintainer reported a successful probe-28 headset play-test and approved this
+build for community release. Local validation includes 2,209 mod checks, an
+original-game replay, 85 installer lifecycle checks and six launcher profile
+checks. Fresh-PC setup, complete campaign coverage and other hardware/runtime
+combinations still need community play-testing.
 
 ## Features
 
 - Head tracking and separate OpenXR eye rendering at 1200x1200 per eye by default.
-- Right-controller aiming, tracked procedural pistol and green aiming dot.
+- Two tracked procedural pistols and controller aiming; optional aiming dots.
+- Independent six-round arcade magazines, separate ammo gauges and shared health
+  above the left gauge. Original mode retains shared native ammo/item handling.
 - Controller menu navigation, left-stick recentering, trigger firing and B reload.
-- Aim-down reload with a guard for observed cinematic bars.
+- Per-gun aim-down reload with a guard for observed cinematic bars.
+- Stronger default shot/reload input feedback, with adjustable haptic strength.
 - Higher-resolution rendering, 4x MSAA, 8x anisotropic filtering and PNG texture
   replacement support. No HD texture pack is included in the public release.
 - Suppression of observed cinematic bars, broader observed visibility queries,
@@ -77,7 +84,7 @@ the original timing. Independent high-rate rendering is future work.
 
 ## Build and set up
 
-Most players should use the [installer](https://github.com/Icedomega13/HouseOfTheDead2VROG/blob/v0.2.1-alpha.23/INSTALL.md). The commands below are for
+Most players should use the [installer](INSTALL.md). The commands below are for
 developers who want to compile the mod themselves.
 
 Run these commands from the repository root. `-ExecutionPolicy Bypass` applies to
@@ -86,7 +93,6 @@ that PowerShell process; it does not change the system execution policy.
 ```powershell
 git clone https://github.com/Icedomega13/HouseOfTheDead2VROG.git
 cd HouseOfTheDead2VROG
-git checkout v0.2.1-alpha.23
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\pcvr\prepare-deps.ps1
 .\pcvr\build.cmd
 if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
@@ -130,15 +136,15 @@ no available headset, reconnect it and restart the game.
 
 ## Controls and settings
 
-These controls describe the current probe-23 installer. For matching source,
+These controls describe the current probe-28 installer. For matching source,
 build the release tag shown in the developer commands above.
 
 | Control | Action |
 |---|---|
-| Right controller | Aim the pistol |
-| Right trigger | Fire |
-| Right B | Reload; also retains the game's deliberate cutscene-skip behavior |
-| Lower the barrel | Automatic reload when armed and outside detected cinematics |
+| Either controller | Aim its gun |
+| Either trigger | Fire that gun (six rounds per hand in arcade mode) |
+| Right B | Reload both; also retains the game's deliberate cutscene-skip behavior |
+| Lower one barrel | Reload only that gun outside detected cinematics; raise it to rearm |
 | Right A | Start / confirm; another press may be needed after the title transition |
 | Left stick directions | Menu navigation |
 | Left stick click | Recenter while facing your intended forward direction |
@@ -169,18 +175,22 @@ five is matched directly in its native counter slots, and other stable count
 glyphs are remembered after a recognized credit row authenticates them. They
 stay hidden when the label blinks off. The shared font remains native elsewhere.
 
-In probe 23, press **left Y** to toggle the green aiming dot and native red
+Press **left Y** to toggle the green aiming dot and native red
 crosshair without hiding the gun or changing aiming/shooting. X remains Back;
 right A/B remain Start/Reload. The toggle lasts for this session and survives
-focus loss. `AimingCursor` (boolean, default true) controls starting visibility.
-No menu is required. The maintainer reported that the version-23 play-test went
-well; community controller/runtime coverage is still needed.
+focus loss. `AimingCursor` (boolean, default false on a fresh install) controls
+starting visibility. Existing saved preferences survive installer updates.
 
-`HapticStrength` is an integer percentage from 0 to
-200: 100 preserves the existing pulse feel, 50 halves amplitude, 200 doubles it
-and 0 is silent. Trigger/reload pulses acknowledge input; they do not yet detect
-actual native shots, ammo refill, hits or damage. Strength and focus-loss behavior
-need broader physical testing across community hardware.
+`DualWield` and `IndependentMagazines` default to true. To use one gun with native
+shared ammo, set both to false and restart. `AmmoGauges` controls the floating ammo
+panels; `HealthGauge` controls the new health panel and replacement of native
+status sprites. Setting `HealthGauge` false restores the original status HUD.
+
+`HapticStrength` is an integer percentage from 0 to 200. At 100, fire uses a
+55 ms / 0.85 amplitude pulse and reload uses 80 ms / 0.40. Zero is silent; amplitude
+is capped at 1.0. These pulses acknowledge input, including empty-gun presses;
+they do not establish a hit or successful native shot. Community hardware and
+physical feel still need broader testing.
 
 ## Texture packs
 
@@ -234,9 +244,11 @@ only the original-PC mod; the separate native Quest project is not included.
 
 ## Development and future releases
 
-The community installer is available now. The accepted single-gun build remains
-the public playable baseline. A separate dual-wield prototype is being explored:
-two controller-aimed guns sharing one player's health and, initially, native ammo.
-Dual wielding is **not included in the current installer**. Independent magazines,
-reliable overlapping shots and broader campaign/hardware coverage remain work
-for later previews. See [the release roadmap](ROADMAP.md).
+Dual wielding and the floating status HUD are now in the community installer.
+Continue reporting bugs with the release version and session diagnostics. Full
+campaign, branching routes, deaths/continues, simultaneous firing and runtime
+interruptions need broader coverage. Native shots are serialized through one
+player's game channel; there is one shared health/lives/credit state.
+
+A flat-screen arcade-room mode, independent high-rate rendering and a broad HD
+texture pack remain future ideas. See [the release roadmap](ROADMAP.md).
