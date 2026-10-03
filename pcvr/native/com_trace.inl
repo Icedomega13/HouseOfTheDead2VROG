@@ -5,13 +5,17 @@ static void trace_device7(void*);
 static IDirect3DDevice7* last_rendering_device=nullptr; // Borrowed, used only at the subsequent presentation.
 #include "eye_targets.inl"
 #include "input_bridge.inl"
+#include "native_ammo.inl"
+#include "native_status.inl"
 #include "timing_research.inl"
 #include "texture_pack.inl"
+#include "hud_prompt.inl"
 static void update_cinematic_guard();
 static volatile LONG presentation_count=0;
 static HRESULT WINAPI trace_flip(void* object,LPDIRECTDRAWSURFACE7 target,DWORD flags) {
     using Fn=HRESULT(WINAPI*)(void*,LPDIRECTDRAWSURFACE7,DWORD);
     update_cinematic_guard();submit_xr_frame(last_rendering_device,eye_atlas);
+    xr_native_present();native_ammo_present();native_health_present();
     timing_research_present(last_rendering_device);
     LONG present=InterlockedIncrement(&presentation_count);
     if(present<=3||present%120==0) log_line("PRESENT flip=%ld",present);
@@ -22,6 +26,7 @@ static HRESULT WINAPI trace_blt(void* object,LPRECT dest,LPDIRECTDRAWSURFACE7 so
     DDSCAPS2 caps={};
     if(SUCCEEDED(static_cast<IDirectDrawSurface7*>(object)->GetCaps(&caps))&&(caps.dwCaps&DDSCAPS_PRIMARYSURFACE)) {
         update_cinematic_guard();submit_xr_frame(last_rendering_device,eye_atlas);
+        xr_native_present();native_ammo_present();native_health_present();
         timing_research_present(last_rendering_device);
         LONG present=InterlockedIncrement(&presentation_count);
         if(present<=3||present%120==0) log_line("PRESENT blt=%ld",present);

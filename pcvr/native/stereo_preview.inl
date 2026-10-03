@@ -37,19 +37,30 @@ static void configure_stereo() {
     suppress_letterbox=GetPrivateProfileIntW(L"OpenXR",L"SuppressLetterbox",1,path)!=0;
     headset_visibility=GetPrivateProfileIntW(L"OpenXR",L"HeadsetVisibility",1,path)!=0;
     effect_audit=GetPrivateProfileIntW(L"OpenXR",L"EffectAudit",0,path)!=0;
+    hide_unused_player_two=GetPrivateProfileIntW(L"OpenXR",L"HideUnusedPlayerTwo",1,path)!=0;
+    log_line("VR_HUD hide_unused_player_two=%d ammo_placement_unchanged=1",hide_unused_player_two);
     int pitch_milli=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"GunPitchMilliDegrees",15000,path));
     float gun_pitch=static_cast<float>(std::clamp(pitch_milli,-45000,45000))/1000;
     bool haptics=GetPrivateProfileIntW(L"OpenXR",L"Haptics",1,path)!=0;
+    int haptic_percent=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"HapticStrength",100,path));
+    if(haptic_percent<0||haptic_percent>200) haptic_percent=100;
     bool down_reload=GetPrivateProfileIntW(L"OpenXR",L"AimDownReload",1,path)!=0;
     UINT down_degrees=GetPrivateProfileIntW(L"OpenXR",L"DownReloadDegrees",55,path);
     down_degrees=std::clamp(down_degrees,35u,85u);
-    configure_xr(xr,static_cast<float>(units),eye_size,log_line,gun_pitch,haptics,down_reload,static_cast<float>(down_degrees));
+    bool aiming_cursor=GetPrivateProfileIntW(L"OpenXR",L"AimingCursor",0,path)!=0;
+    bool dual_wield=GetPrivateProfileIntW(L"OpenXR",L"DualWield",0,path)!=0;
+    configure_xr(xr,static_cast<float>(units),eye_size,log_line,gun_pitch,haptics,down_reload,static_cast<float>(down_degrees),haptic_percent/100.0f,aiming_cursor,dual_wield);
+    xr_configure_ammo_gauges(GetPrivateProfileIntW(L"OpenXR",L"AmmoGauges",1,path)!=0);
+    install_independent_ammo(xr&&dual_wield&&GetPrivateProfileIntW(L"OpenXR",L"IndependentMagazines",0,path)!=0);
+    install_native_status(xr&&GetPrivateProfileIntW(L"OpenXR",L"HealthGauge",0,path)!=0);
+    native_ammo_present();
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
     overlay_audit=GetPrivateProfileIntW(L"OpenXR",L"ReplayOverlayAudit",0,path)!=0;
     int replay_yaw=static_cast<int>(GetPrivateProfileIntW(L"OpenXR",L"ReplayYawDegrees",0,path));
     bool passive=GetPrivateProfileIntW(L"OpenXR",L"ReplayPassive",0,path)!=0;
     bool combat=GetPrivateProfileIntW(L"OpenXR",L"ReplayCombat",0,path)!=0;
-    configure_xr_replay(static_cast<float>(replay_yaw),passive,combat);
+    bool cursor_toggle=GetPrivateProfileIntW(L"OpenXR",L"ReplayCursorToggle",0,path)!=0;
+    configure_xr_replay(static_cast<float>(replay_yaw),passive,combat,cursor_toggle);
     log_line("REPLAY_TEST yaw_degrees=%d passive=%d",replay_yaw,passive);
 #endif
     log_line("VR_CALIBRATION units_per_metre=%u gun_pitch_down_degrees=%.4g",units,gun_pitch);
@@ -76,26 +87,30 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
     if(overlay_audit&&fvf==0x1c4) {
         auto p=static_cast<const float*>(vertices);
-        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);
-        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);if(texture_dump_enabled)replacement_texture(texture);texture->Release();}
-        static std::vector<std::array<int,5>> seen;
-        std::array<int,5> key={static_cast<int>(count),static_cast<int>(td.dwWidth),static_cast<int>(td.dwHeight),
-            static_cast<int>(std::clamp(p[2],-10.0f,10.0f)*10000),static_cast<int>(std::clamp(p[3],-10.0f,10.0f)*10000)};
+        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);std::string texture_key="none";
+        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);if(texture_dump_enabled)replacement_texture(texture);texture_key=cached_texture_key(texture);texture->Release();}
+        static std::vector<std::string> seen;
+        if(td.dwWidth==32&&td.dwHeight==64&&count==4){
+            static unsigned slots=0;if(slots++<6)log_line("STATUS_SLOT native_quad=%.6g,%.6g;%.6g,%.6g;%.6g,%.6g;%.6g,%.6g z_rhw=%.9g,%.9g uv=%.6g,%.6g;%.6g,%.6g;%.6g,%.6g;%.6g,%.6g",p[0],p[1],p[8],p[9],p[16],p[17],p[24],p[25],p[2],p[3],p[6],p[7],p[14],p[15],p[22],p[23],p[30],p[31]);
+            static bool ready_reported=false;if(xr_replace_native_status()&&!ready_reported){ready_reported=true;log_line("STATUS_SLOT replacement_ready=1 recognized=%d native_quad=%.9g,%.9g;%.9g,%.9g;%.9g,%.9g;%.9g,%.9g z_rhw=%.9g,%.9g uv=%.9g,%.9g;%.9g,%.9g;%.9g,%.9g;%.9g,%.9g",hotd2_hud::native_status_quad(vertices,count,hotd2_hud::Text::NativeAmmo),p[0],p[1],p[8],p[9],p[16],p[17],p[24],p[25],p[2],p[3],p[6],p[7],p[14],p[15],p[22],p[23],p[30],p[31]);}
+        }
+        std::string key=std::to_string(count)+":"+std::to_string(td.dwWidth)+":"+std::to_string(td.dwHeight)+":"+texture_key+":"+
+            std::to_string(static_cast<int>(std::clamp(p[2],-10.0f,10.0f)*10000))+":"+std::to_string(static_cast<int>(std::clamp(p[3],-10.0f,10.0f)*10000));
         if(seen.size()<256&&std::find(seen.begin(),seen.end(),key)==seen.end()) {
             seen.push_back(key);
             D3DMATRIX projection={};device->GetTransform(D3DTRANSFORMSTATE_PROJECTION,&projection);
-            log_line("RHW_AUDIT frame=%ld caller=%p parent=%p count=%lu texture=%lux%lu xyzrhw=%.6g,%.6g,%.6g,%.6g projection_xy=%.6g,%.6g projection_z=%.6g,%.6g,%.6g,%.6g",scene_count,replay_draw_caller,replay_draw_parent,count,td.dwWidth,td.dwHeight,p[0],p[1],p[2],p[3],projection._11,projection._22,projection._33,projection._34,projection._43,projection._44);
+            log_line("RHW_AUDIT frame=%ld caller=%p parent=%p count=%lu texture=%lux%lu xyzrhw=%.6g,%.6g,%.6g,%.6g projection_xy=%.6g,%.6g projection_z=%.6g,%.6g,%.6g,%.6g texture_key=%s uv=%.5g,%.5g color=%08lx",scene_count,replay_draw_caller,replay_draw_parent,count,td.dwWidth,td.dwHeight,p[0],p[1],p[2],p[3],projection._11,projection._22,projection._33,projection._34,projection._43,projection._44,texture_key.c_str(),p[6],p[7],reinterpret_cast<const DWORD*>(p)[4]);
         }
     }
     if(overlay_audit&&fvf==0x112&&count==4){
-        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);
-        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);texture->Release();}
-        static std::vector<std::array<int,2>> seen_xyz;
-        std::array<int,2> key={static_cast<int>(td.dwWidth),static_cast<int>(td.dwHeight)};
+        IDirectDrawSurface7* texture=nullptr;DDSURFACEDESC2 td={};td.dwSize=sizeof(td);std::string texture_key="none";
+        if(SUCCEEDED(device->GetTexture(0,&texture))&&texture){texture->GetSurfaceDesc(&td);if(texture_dump_enabled)replacement_texture(texture);texture_key=cached_texture_key(texture);texture->Release();}
+        static std::vector<std::string> seen_xyz;
+        std::string key=std::to_string(td.dwWidth)+":"+std::to_string(td.dwHeight)+":"+texture_key;
         if(seen_xyz.size()<128&&std::find(seen_xyz.begin(),seen_xyz.end(),key)==seen_xyz.end()){
             seen_xyz.push_back(key);auto p=static_cast<const float*>(vertices);D3DMATRIX world={},view={};
             device->GetTransform(D3DTRANSFORMSTATE_WORLD,&world);device->GetTransform(D3DTRANSFORMSTATE_VIEW,&view);
-            log_line("XYZ_QUAD_AUDIT frame=%ld caller=%p texture=%lux%lu xyz=%.6g,%.6g,%.6g world_translation=%.6g,%.6g,%.6g view_translation=%.6g,%.6g,%.6g",scene_count,replay_draw_caller,td.dwWidth,td.dwHeight,p[0],p[1],p[2],world._41,world._42,world._43,view._41,view._42,view._43);
+            log_line("XYZ_QUAD_AUDIT frame=%ld caller=%p texture=%lux%lu xyz=%.6g,%.6g,%.6g world_translation=%.6g,%.6g,%.6g view_translation=%.6g,%.6g,%.6g texture_key=%s",scene_count,replay_draw_caller,td.dwWidth,td.dwHeight,p[0],p[1],p[2],world._41,world._42,world._43,view._41,view._42,view._43,texture_key.c_str());
         }
     }
 #endif
@@ -105,7 +120,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
         viewport.dwWidth<2 || viewport.dwHeight<2) return draw(vertices);
     using Transform=HRESULT(WINAPI*)(void*,D3DTRANSFORMSTATETYPE,LPD3DMATRIX);
     auto set_transform=original_slot<Transform>(object,11);
-    bool audit_effect=false;DDSURFACEDESC2 effect_texture={};effect_texture.dwSize=sizeof(effect_texture);
+    bool audit_effect=false;DDSURFACEDESC2 effect_texture={};effect_texture.dwSize=sizeof(effect_texture);std::string effect_key="uncached";
     static unsigned effect_samples=0;
     static std::vector<std::array<int,6>> effect_positions;
     if(effect_audit&&fvf==0x1c4&&count==4&&effect_samples<96&&xr_game_input().fire){
@@ -115,6 +130,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
                 audit_effect=(effect_texture.dwWidth==32&&effect_texture.dwHeight==32)||
                     (effect_texture.dwWidth==64&&effect_texture.dwHeight==64)||
                     (effect_texture.dwWidth==512&&effect_texture.dwHeight==64);
+            if(audit_effect) effect_key=cached_texture_key(texture);
             texture->Release();
         }
         if(audit_effect){
@@ -133,6 +149,9 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
         }
     }
     bool flat_xyz=false,letterbox=false;
+#ifdef HOTD2_CONTROLLER_REPLAY_TEST
+    unsigned shot_capture=0;
+#endif
     // Native cinematic bars are four-vertex, camera-aligned quads at Z=1,
     // using the ordinary scene projection rather than a special near plane.
     if(fvf==0x112&&count==4&&projection._34>0&&projection._43<0) {
@@ -140,7 +159,16 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
         D3DMATRIX world={};
         if(SUCCEEDED(device->GetTransform(D3DTRANSFORMSTATE_WORLD,&world))) {
             XMFLOAT4X4 w,v;memcpy(&w,&world,sizeof(w));memcpy(&v,&view,sizeof(v));
-            flat_xyz=hotd2_xr::unit_depth_plane(XMLoadFloat4x4(&w)*XMLoadFloat4x4(&v),vertices,count);
+            bool near_effect=hotd2_xr::near_screen_effect(XMLoadFloat4x4(&w),XMLoadFloat4x4(&v),vertices,count);
+            flat_xyz=near_effect||hotd2_xr::unit_depth_plane(XMLoadFloat4x4(&w)*XMLoadFloat4x4(&v),vertices,count);
+            if(near_effect) {
+                static unsigned reports=0;
+                if(reports++<4) log_line("VR_SCREEN_EFFECT rotated native shot quad recognized for HUD-distance eye pass; desktop preserved");
+#ifdef HOTD2_CONTROLLER_REPLAY_TEST
+                static unsigned captures=0;
+                if(overlay_audit&&captures<3) shot_capture=++captures;
+#endif
+            }
 #ifdef HOTD2_CONTROLLER_REPLAY_TEST
             if(flat_xyz&&overlay_audit) {
                 float bounds[]={1,-1,1,-1};
@@ -169,7 +197,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
             if(letterbox) cinematic_seen=true;
             letterbox=letterbox&&suppress_letterbox;
             static unsigned reports=0;
-            if(flat_xyz&&reports++<3) log_line("SCREEN_PLANE XYZ overlay at native Z=1 moved to 2 metres");
+            if(flat_xyz&&!near_effect&&reports++<3) log_line("SCREEN_PLANE XYZ overlay at native Z=1 moved to 2 metres");
         }
     }
     if(fvf==0x112&&(scene_count==1500||scene_count==3000)) {
@@ -200,6 +228,9 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
     if(atlas) {
         // Preserve the original desktop image for game input and diagnostics.
         result=draw(vertices);
+        if(xr_frame_ready()&&hide_native_status_draw(device,fvf,vertices,count,viewport)) return result;
+        if(xr_frame_ready()&&hide_player_two_draw(device,fvf,vertices,count,viewport,static_cast<uint32_t>(presentation_count))) return result;
+        if(xr_frame_ready()&&hide_aim_cursor_draw(device,fvf,vertices,count,viewport)) return result;
         if(letterbox) {
             static unsigned reports=0;if(reports++<4) log_line("VR_LETTERBOX native bar preserved on desktop, suppressed in eye atlas");
             return result;
@@ -247,7 +278,7 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
             data=adjusted.data();
             if(audit_effect){
                 const auto p=static_cast<const float*>(vertices);auto out=reinterpret_cast<const float*>(data);auto aim=xr_game_input();
-                log_line("EFFECT_AUDIT frame=%ld sample=%u eye=%u texture=%lux%lu native_xy_z_rhw=%.6g,%.6g,%.6g,%.6g eye_xy=%.6g,%.6g aim=%.6g,%.6g visible=%d viewport=%lu,%lu,%lu,%lu projection_xy=%.6g,%.6g",scene_count,effect_samples,eye,effect_texture.dwWidth,effect_texture.dwHeight,p[0],p[1],p[2],p[3],out[0],out[1],aim.x,aim.y,visible,viewport.dwX,viewport.dwY,viewport.dwWidth,viewport.dwHeight,projection._11,projection._22);
+                log_line("EFFECT_AUDIT frame=%ld sample=%u eye=%u texture=%lux%lu native_xy_z_rhw=%.6g,%.6g,%.6g,%.6g eye_xy=%.6g,%.6g aim=%.6g,%.6g visible=%d viewport=%lu,%lu,%lu,%lu projection_xy=%.6g,%.6g texture_key=%s uv=%.5g,%.5g color=%08lx",scene_count,effect_samples,eye,effect_texture.dwWidth,effect_texture.dwHeight,p[0],p[1],p[2],p[3],out[0],out[1],aim.x,aim.y,visible,viewport.dwX,viewport.dwY,viewport.dwWidth,viewport.dwHeight,projection._11,projection._22,effect_key.c_str(),p[6],p[7],reinterpret_cast<const DWORD*>(p)[4]);
                 if(eye==1)++effect_samples;
             }
         }
@@ -260,5 +291,14 @@ template<class Draw> static HRESULT stereo_draw(void* object,DWORD fvf,void* ver
     if(desktop) {restored_target=device->SetRenderTarget(desktop,0);desktop->Release();}
     HRESULT restored_viewport=device->SetViewport(&viewport);
     if(FAILED(restored_view)||FAILED(restored_projection)||FAILED(restored_viewport)||FAILED(restored_target)) log_line("STEREO restore error view=%08lx projection=%08lx viewport=%08lx target=%08lx",restored_view,restored_projection,restored_viewport,restored_target);
+#ifdef HOTD2_CONTROLLER_REPLAY_TEST
+    if(shot_capture&&atlas) {
+        // At most three pairs, from owned targets only. Include the shot draw
+        // immediately; an arbitrary end-of-scene capture can miss a short flash.
+        capture_frame(device,220000+shot_capture*10+1);
+        SavedGameState saved(device,false,log_line,"shot_capture");
+        if(saved.bind(eye_atlas)) capture_frame(device,220000+shot_capture*10+2);
+    }
+#endif
     return result;
 }

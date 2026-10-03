@@ -3,8 +3,9 @@ param([ValidateRange(15,90)][int]$Seconds=35,[string]$BuildDirectory,[string]$Ga
     [ValidateRange(0,16)][int]$AnisotropicFiltering=0,[bool]$SuppressLetterbox=$true,
     [ValidateRange(-180,180)][int]$YawDegrees=0,[switch]$Passive,[bool]$HeadsetVisibility=$true,
     [switch]$TimingAudit,[ValidateSet(0,60,90,120)][int]$NativeHz=0,
-    [switch]$TextureDump,[switch]$TexturePack,[switch]$NoVSync,[switch]$OverlayAudit,[switch]$Combat,[switch]$EffectAudit)
+    [switch]$TextureDump,[switch]$TexturePack,[switch]$NoVSync,[switch]$OverlayAudit,[switch]$Combat,[switch]$EffectAudit,[bool]$HideUnusedPlayerTwo=$true,[bool]$AimingCursor=$true,[bool]$AmmoGauges=$true,[bool]$HealthGauge=$false,[switch]$CursorToggle,[switch]$DualWield,[switch]$IndependentMagazines,[string]$SettingsFile)
 $ErrorActionPreference='Stop'
+if($IndependentMagazines -and !$DualWield){throw 'Independent magazines require -DualWield.'}
 $root=Split-Path $PSScriptRoot -Parent
 $game=Join-Path $root 'working/pcvr/game'
 $build=Join-Path $root 'build/pcvr'
@@ -20,9 +21,27 @@ $disc=(Resolve-Path -LiteralPath (Join-Path $root 'working/intake/windows-data.i
 $mounted=$false
 $startedAt=Get-Date
 $evidence=Join-Path $root 'working/pcvr/captures/controller-replay'
-$profile=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'vr-settings.json') -Raw | ConvertFrom-Json
+$profilePath=Join-Path $PSScriptRoot 'vr-settings.json'
+if($SettingsFile){$profilePath=(Resolve-Path -LiteralPath $SettingsFile).Path}
+$profile=Get-Content -LiteralPath $profilePath -Raw | ConvertFrom-Json
+if(!$PSBoundParameters.ContainsKey('AimingCursor') -and $null -ne $profile.AimingCursor){
+ if($profile.AimingCursor -isnot [bool]){throw 'AimingCursor must be true or false.'};$AimingCursor=$profile.AimingCursor
+}
+if(!$PSBoundParameters.ContainsKey('AmmoGauges') -and $null -ne $profile.AmmoGauges){
+ if($profile.AmmoGauges -isnot [bool]){throw 'AmmoGauges must be true or false.'};$AmmoGauges=$profile.AmmoGauges
+}
 if(!$PSBoundParameters.ContainsKey('EyeSize')){$EyeSize=$profile.EyeSize}
 $profile.EyeSize=$EyeSize
+if(!$PSBoundParameters.ContainsKey('HealthGauge') -and $null -ne $profile.HealthGauge){
+ if($profile.HealthGauge -isnot [bool]){throw 'HealthGauge must be true or false.'};$HealthGauge=$profile.HealthGauge
+}
+$profile | Add-Member -NotePropertyName HealthGauge -NotePropertyValue $HealthGauge -Force
+$profile | Add-Member -NotePropertyName AimingCursor -NotePropertyValue $AimingCursor -Force
+$profile | Add-Member -NotePropertyName AmmoGauges -NotePropertyValue $AmmoGauges -Force
+$profile | Add-Member -NotePropertyName ReplayCursorToggle -NotePropertyValue ([bool]$CursorToggle) -Force
+$profile | Add-Member -NotePropertyName DualWield -NotePropertyValue ([bool]$DualWield) -Force
+$profile | Add-Member -NotePropertyName IndependentMagazines -NotePropertyValue ([bool]$IndependentMagazines) -Force
+$profile | Add-Member -NotePropertyName HideUnusedPlayerTwo -NotePropertyValue $HideUnusedPlayerTwo -Force
 $profile | Add-Member -NotePropertyName Antialiasing -NotePropertyValue $Antialiasing -Force
 $profile | Add-Member -NotePropertyName AnisotropicFiltering -NotePropertyValue $AnisotropicFiltering -Force
 $profile | Add-Member -NotePropertyName HeadsetVisibility -NotePropertyValue $HeadsetVisibility -Force
@@ -32,10 +51,12 @@ try {
  Copy-Item -LiteralPath $replay -Destination (Join-Path $game 'ddraw.dll') -Force
  (Get-Item -LiteralPath (Join-Path $game 'ddraw.dll')).IsReadOnly=$false
  Set-Hotd2GraphicsQuality -ConfigPath (Join-Path $game 'dgVoodoo.conf') -Antialiasing $Antialiasing -AnisotropicFiltering $AnisotropicFiltering
- @('[Stereo]','Enabled=1','SeparationMilliunits=6400','[OpenXR]','Enabled=1',"UnitsPerMetre=$($profile.UnitsPerMetre)","EyeSize=$($profile.EyeSize)","GunPitchMilliDegrees=$([int]($profile.GunPitchDegrees*1000))","Haptics=$([int][bool]$profile.Haptics)","AimDownReload=$([int][bool]$profile.AimDownReload)","DownReloadDegrees=$($profile.DownReloadDegrees)","SuppressLetterbox=$([int]$SuppressLetterbox)","HeadsetVisibility=$([int]$HeadsetVisibility)") | Set-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
+ @('[Stereo]','Enabled=1','SeparationMilliunits=6400','[OpenXR]','Enabled=1',"UnitsPerMetre=$($profile.UnitsPerMetre)","EyeSize=$($profile.EyeSize)","GunPitchMilliDegrees=$([int]($profile.GunPitchDegrees*1000))","Haptics=$([int][bool]$profile.Haptics)","HapticStrength=$($profile.HapticStrength)","AimDownReload=$([int][bool]$profile.AimDownReload)","DownReloadDegrees=$($profile.DownReloadDegrees)","SuppressLetterbox=$([int]$SuppressLetterbox)","HeadsetVisibility=$([int]$HeadsetVisibility)","HideUnusedPlayerTwo=$([int]$HideUnusedPlayerTwo)","AimingCursor=$([int]$AimingCursor)","ReplayCursorToggle=$([int][bool]$CursorToggle)") | Set-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayYawDegrees=$YawDegrees","ReplayPassive=$([int][bool]$Passive)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayOverlayAudit=$([int][bool]$OverlayAudit)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayCombat=$([int][bool]$Combat)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
+ @("DualWield=$([int][bool]$DualWield)","IndependentMagazines=$([int][bool]$IndependentMagazines)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
+ @("AmmoGauges=$([int]$AmmoGauges)","HealthGauge=$([int]$HealthGauge)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("EffectAudit=$([int][bool]$EffectAudit)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayTimingAudit=$([int][bool]$TimingAudit)","ReplayNativeHz=$NativeHz") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
  @("ReplayNoVSync=$([int][bool]$NoVSync)",'[Textures]',"Dump=$([int][bool]$TextureDump)","Enabled=$([int][bool]$TexturePack)") | Add-Content -LiteralPath (Join-Path $game 'pcvr-probe.ini') -Encoding ascii
